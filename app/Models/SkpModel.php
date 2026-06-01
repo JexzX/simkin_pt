@@ -33,19 +33,14 @@ class SkpModel extends Model
         return $builder->orderBy('created_at', 'DESC')->findAll();
     }
 
+    // METHOD INI YANG DIPERBAIKI
     public function getSkpForApproval($atasanId)
     {
-        $userModel = new UserModel();
-        $bawahan = $userModel->getBawahan($atasanId);
-        $bawahanIds = array_column($bawahan, 'id');
-        
-        if (empty($bawahanIds)) {
-            return [];
-        }
-        
-        return $this->whereIn('user_id', $bawahanIds)
-                    ->where('status', 'menunggu_approval')
-                    ->orderBy('tanggal_pengajuan', 'DESC')
+        return $this->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan')
+                    ->join('users', 'users.id = skp_master.user_id')
+                    ->where('skp_master.status', 'menunggu_approval')
+                    ->where('users.atasan_id', $atasanId)
+                    ->orderBy('skp_master.tanggal_pengajuan', 'DESC')
                     ->findAll();
     }
 
