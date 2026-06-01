@@ -10,7 +10,15 @@ class Approval extends BaseController
     public function skpList()
     {
         $skpModel = new SkpModel();
-        $skpList = $skpModel->getSkpForApproval(session()->get('id'));
+        $userId = session()->get('id');
+        
+        // Debug: cek apakah ada SKP menunggu approval dari bawahan
+        $skpList = $skpModel->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan')
+                            ->join('users', 'users.id = skp_master.user_id')
+                            ->where('skp_master.status', 'menunggu_approval')
+                            ->where('users.atasan_id', $userId)
+                            ->orderBy('skp_master.tanggal_pengajuan', 'DESC')
+                            ->findAll();
         
         $data = [
             'title' => 'Persetujuan SKP',
@@ -30,7 +38,13 @@ class Approval extends BaseController
         }
         
         $catatan = $this->request->getPost('catatan');
-        $skpModel->submitApproval($id, 'disetujui', $catatan);
+        
+        // Update status SKP
+        $skpModel->update($id, [
+            'status' => 'disetujui',
+            'catatan_atasan' => $catatan,
+            'tanggal_approval' => date('Y-m-d H:i:s')
+        ]);
         
         // Tambah riwayat
         $this->addRiwayatApproval($id, 'menunggu_approval', 'disetujui');
@@ -57,7 +71,13 @@ class Approval extends BaseController
         }
         
         $catatan = $this->request->getPost('catatan');
-        $skpModel->submitApproval($id, 'ditolak', $catatan);
+        
+        // Update status SKP
+        $skpModel->update($id, [
+            'status' => 'ditolak',
+            'catatan_atasan' => $catatan,
+            'tanggal_approval' => date('Y-m-d H:i:s')
+        ]);
         
         // Tambah riwayat
         $this->addRiwayatApproval($id, 'menunggu_approval', 'ditolak');
