@@ -11,16 +11,6 @@ class UserManagement extends BaseController
         $userModel = new UserModel();
         $users = $userModel->findAll();
         
-        // Get atasan name for each user
-        foreach ($users as &$user) {
-            if ($user['atasan_id']) {
-                $atasan = $userModel->find($user['atasan_id']);
-                $user['atasan_nama'] = $atasan['nama_lengkap'] ?? '-';
-            } else {
-                $user['atasan_nama'] = '-';
-            }
-        }
-        
         $data = [
             'title' => 'Manajemen User',
             'users' => $users
@@ -35,7 +25,7 @@ class UserManagement extends BaseController
         $users = $userModel->findAll();
         
         $data = [
-            'title' => 'Tambah User Baru',
+            'title' => 'Tambah User',
             'users' => $users
         ];
         
@@ -102,21 +92,6 @@ class UserManagement extends BaseController
             return redirect()->to('/user')->with('error', 'User tidak ditemukan');
         }
         
-        $rules = [
-            'nama_lengkap' => 'required',
-            'unit_kerja' => 'required',
-            'jabatan' => 'required',
-            'role' => 'required'
-        ];
-        
-        if ($this->request->getPost('username') != $user['username']) {
-            $rules['username'] = 'required|is_unique[users.username]';
-        }
-        
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-        
         $updateData = [
             'username' => $this->request->getPost('username'),
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
@@ -144,16 +119,14 @@ class UserManagement extends BaseController
     {
         $userModel = new UserModel();
         
-        // Check if user has subordinates
-        $bawahan = $userModel->where('atasan_id', $id)->countAllResults();
-        if ($bawahan > 0) {
-            return redirect()->back()->with('error', 'User memiliki bawahan, tidak dapat dihapus');
+        if ($id == session()->get('id')) {
+            return redirect()->back()->with('error', 'Tidak dapat menghapus akun sendiri');
         }
         
         $userModel->delete($id);
         return redirect()->to('/user')->with('success', 'User berhasil dihapus');
     }
-
+    
     public function resetPassword($id)
     {
         $userModel = new UserModel();

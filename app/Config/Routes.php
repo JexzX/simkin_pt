@@ -73,4 +73,5 @@ $routes->group('user', ['filter' => 'auth'], function($routes) {
     $routes->get('/edit/(:num)', 'UserManagement::edit/$1');
     $routes->post('/update/(:num)', 'UserManagement::update/$1');
     $routes->get('/delete/(:num)', 'UserManagement::delete/$1');
+    $routes->get('/reset-password/(:num)', 'UserManagement::resetPassword/$1');
 });
