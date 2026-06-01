@@ -66,12 +66,13 @@ $routes->group('master', ['filter' => 'auth'], function($routes) {
 });
 
 // User management routes (super admin only)
+// PERHATIKAN: Tidak ada garis miring di depan (cukup 'create', bukan '/create')
 $routes->group('user', ['filter' => 'auth'], function($routes) {
     $routes->get('/', 'UserManagement::index');
-    $routes->get('/create', 'UserManagement::create');
-    $routes->post('/store', 'UserManagement::store');
-    $routes->get('/edit/(:num)', 'UserManagement::edit/$1');
-    $routes->post('/update/(:num)', 'UserManagement::update/$1');
-    $routes->get('/delete/(:num)', 'UserManagement::delete/$1');
-    $routes->get('/reset-password/(:num)', 'UserManagement::resetPassword/$1');
+    $routes->get('create', 'UserManagement::create');
+    $routes->post('store', 'UserManagement::store');
+    $routes->get('edit/(:num)', 'UserManagement::edit/$1');
+    $routes->post('update/(:num)', 'UserManagement::update/$1');
+    $routes->get('delete/(:num)', 'UserManagement::delete/$1');
+    $routes->get('reset-password/(:num)', 'UserManagement::resetPassword/$1');
 });
