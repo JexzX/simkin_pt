@@ -21,21 +21,9 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'SKP sudah diajukan, tidak dapat menambah RHK');
         }
         
-        // Siapkan data intervensi untuk user non-rektor
-        $intervensiList = [];
-        $role = session()->get('role');
-        if (!in_array($role, ['rektor', 'super_admin', 'admin_perencana'])) {
-            $masterIkskModel = new MasterIkskModel();
-            $intervensiList = $masterIkskModel->where('pic_unit', session()->get('unit_kerja'))
-                                              ->where('tahun', date('Y'))
-                                              ->findAll();
-        }
-        
         $data = [
             'title' => 'Tambah RHK',
-            'skp_id' => $skpId,
-            'intervensiList' => $intervensiList,
-            'role' => $role
+            'skp_id' => $skpId
         ];
         
         return view('rhk/create', $data);
@@ -67,13 +55,6 @@ class Rhk extends BaseController
             'target_waktu' => $this->request->getPost('target_waktu'),
             'bobot' => $this->request->getPost('bobot') ?: 0
         ];
-        
-        // Intervensi dari atasan
-        $intervensiType = $this->request->getPost('intervensi_type');
-        if ($intervensiType == 'iksk') {
-            $data['intervensi_dari_type'] = 'master_iksk';
-            $data['intervensi_dari_id'] = $this->request->getPost('intervensi_id');
-        }
         
         $rhkModel->insert($data);
         

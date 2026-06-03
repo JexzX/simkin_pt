@@ -11,8 +11,9 @@ class Approval extends BaseController
     {
         $skpModel = new SkpModel();
         $userId = session()->get('id');
+        $userRole = session()->get('role');
         
-        // Debug: cek apakah ada SKP menunggu approval dari bawahan
+        // Query untuk mengambil SKP bawahan yang menunggu approval
         $skpList = $skpModel->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan')
                             ->join('users', 'users.id = skp_master.user_id')
                             ->where('skp_master.status', 'menunggu_approval')

@@ -34,9 +34,14 @@
         min-height: 100vh;
     }
 
-    .badge-status {
-        padding: 5px 12px;
-        border-radius: 20px;
+    .btn-approve {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-reject {
+        background: #dc3545;
+        color: white;
     }
     </style>
 </head>
@@ -85,59 +90,8 @@
                 <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
                 <?php endif; ?>
 
-                <!-- Info SKP -->
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0">Informasi SKP</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <table class="table table-sm">
-                                    <tr>
-                                        <td width="150">ID SKP</td>
-                                        <td>: <?= $skp['id'] ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Periode</td>
-                                        <td>: <?= $skp['periode_id'] ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Status</td>
-                                        <td>:
-                                            <span
-                                                class="badge badge-status bg-<?= $skp['status'] == 'disetujui' ? 'success' : ($skp['status'] == 'menunggu_approval' ? 'warning' : 'secondary') ?>">
-                                                <?= $skp['status'] ?>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <table class="table table-sm">
-                                    <tr>
-                                        <td width="150">Total Bobot</td>
-                                        <td>: <?= $totalBobot ?>%</td>
-                                    </tr>
-                                    <?php if($skp['tanggal_pengajuan']): ?>
-                                    <tr>
-                                        <td>Tgl Pengajuan</td>
-                                        <td>: <?= date('d/m/Y H:i', strtotime($skp['tanggal_pengajuan'])) ?></td>
-                                    </tr>
-                                    <?php endif; ?>
-                                </table>
-                            </div>
-                        </div>
-                        <?php if($skp['catatan_atasan']): ?>
-                        <div class="alert alert-warning mt-2">
-                            <strong>Catatan Atasan:</strong> <?= $skp['catatan_atasan'] ?>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Tombol Aksi -->
-                <?php if($skp['status'] == 'draft'): ?>
+                <!-- Tombol Ajukan SKP (hanya untuk pembuat SKP yang statusnya draft) -->
+                <?php if($skp['status'] == 'draft' && session()->get('id') == $skp['user_id']): ?>
                 <div class="mb-3">
                     <?php if($bisaDiajukan): ?>
                     <form action="<?= base_url('/skp/submit/' . $skp['id']) ?>" method="post" class="d-inline">
@@ -161,11 +115,147 @@
                 </div>
                 <?php endif; ?>
 
+                <!-- TOMBOL APPROVAL UNTUK ATASAN -->
+                <?php 
+                // Cek apakah user yang login adalah atasan dari pembuat SKP
+                $isAtasan = false;
+                $currentUserId = session()->get('id');
+                $pembuatSkpId = $skp['user_id'] ?? 0;
+                $currentUserRole = session()->get('role');
+                
+                // Jika user adalah atasan dari pembuat SKP (berdasarkan atasan_id)
+                if($pembuatSkpId != $currentUserId) {
+                    // Ambil data pembuat SKP dari database
+                    $userModel = new \App\Models\UserModel();
+                    $pembuatSkp = $userModel->find($pembuatSkpId);
+                    
+                    if($pembuatSkp && $pembuatSkp['atasan_id'] == $currentUserId) {
+                        $isAtasan = true;
+                    }
+                }
+                // Super admin dan Rektor bisa approve semua SKP bawahan
+                if(in_array($currentUserRole, ['super_admin', 'rektor'])) {
+                    $isAtasan = true;
+                }
+                
+                // Tampilkan tombol approval jika:
+                // 1. Status SKP = menunggu_approval
+                // 2. User adalah atasan dari pembuat SKP
+                // 3. User bukan pembuat SKP sendiri
+                if($skp['status'] == 'menunggu_approval' && $isAtasan && $currentUserId != $pembuatSkpId): 
+                ?>
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-white">
+                        <h6 class="mb-0"><i class="fas fa-check-double me-2"></i> Persetujuan SKP</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>SKP ini menunggu persetujuan Anda sebagai atasan.</p>
+
+                        <form action="<?= base_url('/approval/skp/approve/' . $skp['id']) ?>" method="post"
+                            class="d-inline">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="catatan" value="SKP disetujui">
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Setujui SKP ini?')">
+                                <i class="fas fa-check me-1"></i> Setujui
+                            </button>
+                        </form>
+
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                            data-bs-target="#rejectModal">
+                            <i class="fas fa-times me-1"></i> Tolak
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Tolak -->
+                <div class="modal fade" id="rejectModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="<?= base_url('/approval/skp/reject/' . $skp['id']) ?>" method="post">
+                                <?= csrf_field() ?>
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Tolak SKP</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Catatan Penolakan</label>
+                                        <textarea name="catatan" class="form-control" rows="3" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-danger">Tolak</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Info SKP -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">Informasi SKP</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td width="150">ID SKP</td>
+                                        <td>: <?= $skp['id'] ?? '-' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Periode ID</td>
+                                        <td>: <?= $skp['periode_id'] ?? '-' ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Status</td>
+                                        <td>:
+                                            <span
+                                                class="badge bg-<?= $skp['status'] == 'disetujui' ? 'success' : ($skp['status'] == 'menunggu_approval' ? 'warning' : 'secondary') ?>">
+                                                <?= $skp['status'] ?? '-' ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td width="150">Total Bobot</td>
+                                        <td>: <?= $totalBobot ?? 0 ?>%</td>
+                                    </tr>
+                                    <?php if(isset($skp['tanggal_pengajuan']) && $skp['tanggal_pengajuan']): ?>
+                                    <tr>
+                                        <td>Tgl Pengajuan</td>
+                                        <td>: <?= date('d/m/Y H:i', strtotime($skp['tanggal_pengajuan'])) ?></td>
+                                    </tr>
+                                    <?php endif; ?>
+                                    <?php if(isset($skp['tanggal_approval']) && $skp['tanggal_approval']): ?>
+                                    <tr>
+                                        <td>Tgl Disetujui</td>
+                                        <td>: <?= date('d/m/Y H:i', strtotime($skp['tanggal_approval'])) ?></td>
+                                    </tr>
+                                    <?php endif; ?>
+                                </table>
+                            </div>
+                        </div>
+                        <?php if(!empty($skp['catatan_atasan'])): ?>
+                        <div class="alert alert-info mt-2">
+                            <strong>Catatan Atasan:</strong> <?= $skp['catatan_atasan'] ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <!-- Daftar RHK -->
                 <div class="card">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="fas fa-list me-2"></i> Daftar RHK</h6>
-                        <?php if($skp['status'] == 'draft'): ?>
+                        <h6 class="mb-0">Daftar RHK</h6>
+                        <?php if(isset($skp['status']) && $skp['status'] == 'draft'): ?>
                         <a href="<?= base_url('/rhk/create/' . $skp['id']) ?>" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus me-1"></i> Tambah RHK
                         </a>
@@ -184,7 +274,6 @@
                                         <th>Jenis</th>
                                         <th>Target</th>
                                         <th>Bobot</th>
-                                        <th>Indikator</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -203,22 +292,12 @@
                                         </td>
                                         <td><?= $rhk['bobot'] ?>%</td>
                                         <td>
-                                            <?php foreach($rhk['indikator'] as $ind): ?>
-                                            <div class="small">• <?= $ind['indikator'] ?> (Target:
-                                                <?= $ind['target'] ?>)</div>
-                                            <?php endforeach; ?>
-                                        </td>
-                                        <td>
                                             <?php if($skp['status'] == 'draft'): ?>
                                             <a href="<?= base_url('/rhk/edit/' . $rhk['id']) ?>"
-                                                class="btn btn-sm btn-warning">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
+                                                class="btn btn-sm btn-warning">Edit</a>
                                             <a href="<?= base_url('/rhk/delete/' . $rhk['id']) ?>"
                                                 class="btn btn-sm btn-danger"
-                                                onclick="return confirm('Hapus RHK ini?')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                                onclick="return confirm('Hapus RHK ini?')">Hapus</a>
                                             <?php endif; ?>
                                         </td>
                                     </tr>

@@ -5,13 +5,17 @@
         <small>Salatiga</small>
     </div>
     <ul class="nav flex-column p-3">
+        <!-- DEBUG: Cek role session -->
+        <?php $userRole = session()->get('role'); ?>
+        <!-- ROLE: <?= $userRole ?> -->
+        
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'dashboard' ? 'active' : '' ?>" href="<?= base_url('/dashboard') ?>">
                 <i class="fas fa-tachometer-alt"></i> Dashboard
             </a>
         </li>
         
-        <?php if(in_array(session()->get('role'), ['super_admin', 'admin_perencana', 'rektor', 'dekan', 'kaprodi', 'dosen'])): ?>
+        <?php if(in_array($userRole, ['super_admin', 'admin_perencana', 'rektor', 'dekan', 'kaprodi', 'dosen'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'skp' ? 'active' : '' ?>" href="<?= base_url('/skp') ?>">
                 <i class="fas fa-file-alt"></i> SKP / RHK
@@ -19,7 +23,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['rektor', 'dekan', 'kaprodi', 'super_admin'])): ?>
+        <?php if(in_array($userRole, ['rektor', 'dekan', 'kaprodi', 'super_admin'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'approval' ? 'active' : '' ?>" href="<?= base_url('/approval/skp') ?>">
                 <i class="fas fa-check-double"></i> Persetujuan SKP
@@ -27,7 +31,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['dosen', 'staff', 'kaprodi', 'dekan', 'rektor'])): ?>
+        <?php if(in_array($userRole, ['dosen', 'staff', 'kaprodi', 'dekan', 'rektor'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'realisasi' ? 'active' : '' ?>" href="<?= base_url('/realisasi') ?>">
                 <i class="fas fa-chart-line"></i> Realisasi
@@ -35,7 +39,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['kaprodi', 'dekan', 'rektor'])): ?>
+        <?php if(in_array($userRole, ['kaprodi', 'dekan', 'rektor'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'approval_realisasi' ? 'active' : '' ?>" href="<?= base_url('/realisasi/approval') ?>">
                 <i class="fas fa-clipboard-list"></i> Persetujuan Realisasi
@@ -43,7 +47,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['rektor', 'dekan', 'kaprodi'])): ?>
+        <?php if(in_array($userRole, ['rektor', 'dekan', 'kaprodi'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'penilaian' ? 'active' : '' ?>" href="<?= base_url('/penilaian') ?>">
                 <i class="fas fa-star"></i> Penilaian SKP
@@ -51,7 +55,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['super_admin', 'admin_perencana'])): ?>
+        <?php if(in_array($userRole, ['super_admin', 'admin_perencana'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'master' ? 'active' : '' ?>" href="#masterMenu" data-bs-toggle="collapse">
                 <i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-down float-end"></i>
@@ -72,7 +76,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(session()->get('role') == 'super_admin'): ?>
+        <?php if($userRole == 'super_admin'): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'user' ? 'active' : '' ?>" href="<?= base_url('/user') ?>">
                 <i class="fas fa-users"></i> Manajemen User
@@ -80,7 +84,7 @@
         </li>
         <?php endif; ?>
         
-        <?php if(in_array(session()->get('role'), ['super_admin', 'admin_perencana', 'rektor'])): ?>
+        <?php if(in_array($userRole, ['super_admin', 'admin_perencana', 'rektor'])): ?>
         <li class="nav-item">
             <a class="nav-link <?= ($active_menu ?? '') == 'laporan' ? 'active' : '' ?>" href="#laporanMenu" data-bs-toggle="collapse">
                 <i class="fas fa-print"></i> Laporan <i class="fas fa-chevron-down float-end"></i>

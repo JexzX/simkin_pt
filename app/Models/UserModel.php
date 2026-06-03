@@ -29,4 +29,21 @@ class UserModel extends Model
     {
         return $this->where('atasan_id', $userId)->findAll();
     }
+
+    public function getByRole($role)
+    {
+        return $this->where('role', $role)->findAll();
+    }
+
+    public function getByUnit($unitKerja)
+    {
+        return $this->where('unit_kerja', $unitKerja)->findAll();
+    }
+    
+    // Method untuk cek apakah user A adalah atasan dari user B
+    public function isAtasanDari($atasanId, $bawahanId)
+    {
+        $bawahan = $this->find($bawahanId);
+        return ($bawahan && $bawahan['atasan_id'] == $atasanId);
+    }
 }

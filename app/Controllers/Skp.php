@@ -94,31 +94,21 @@ class Skp extends BaseController
         
         $rhkList = $rhkModel->getBySkp($id);
         
-        // Ambil indikator untuk setiap RHK
         foreach ($rhkList as &$rhk) {
             $rhk['indikator'] = $indikatorModel->getByRhk($rhk['id']);
         }
         
         $totalBobot = $rhkModel->hitungTotalBobot($id);
         
-        // Siapkan data intervensi untuk user non-rektor
-        $intervensiList = [];
-        $role = session()->get('role');
-        if (!in_array($role, ['rektor', 'super_admin', 'admin_perencana'])) {
-            $masterIkskModel = new MasterIkskModel();
-            $intervensiList = $masterIkskModel->where('pic_unit', session()->get('unit_kerja'))
-                                              ->where('tahun', date('Y'))
-                                              ->findAll();
-        }
+        // Cek apakah bisa diajukan (bobot 100% dan ada RHK)
+        $bisaDiajukan = ($totalBobot == 100 && !empty($rhkList));
         
         $data = [
             'title' => 'Detail SKP',
             'skp' => $skp,
             'rhkList' => $rhkList,
             'totalBobot' => $totalBobot,
-            'intervensiList' => $intervensiList,
-            'role' => $role,
-            'bisaDiajukan' => ($totalBobot == 100 && !empty($rhkList))
+            'bisaDiajukan' => $bisaDiajukan
         ];
         
         return view('skp/detail', $data);
