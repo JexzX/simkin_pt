@@ -4,13 +4,16 @@ namespace App\Controllers;
 
 use App\Models\RhkModel;
 use App\Models\SkpModel;
-use App\Models\MasterIkskModel;
+use App\Models\UserModel;
 
 class Rhk extends BaseController
 {
     public function create($skpId)
     {
         $skpModel = new SkpModel();
+        $rhkModel = new RhkModel();
+        $userModel = new UserModel();
+        
         $skp = $skpModel->find($skpId);
         
         if (!$skp || $skp['user_id'] != session()->get('id')) {
@@ -21,9 +24,28 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'SKP sudah diajukan, tidak dapat menambah RHK');
         }
         
+        // Ambil intervensi dari atasan (RHK atasan yang sudah disetujui)
+        $intervensiList = [];
+        $currentUserId = session()->get('id');
+        $currentUser = $userModel->find($currentUserId);
+        $atasanId = $currentUser['atasan_id'] ?? null;
+        
+        if ($atasanId) {
+            // Cari SKP atasan yang sudah disetujui
+            $skpAtasan = $skpModel->where('user_id', $atasanId)
+                                  ->where('status', 'disetujui')
+                                  ->first();
+            
+            if ($skpAtasan) {
+                // Ambil RHK dari SKP atasan
+                $intervensiList = $rhkModel->where('skp_id', $skpAtasan['id'])->findAll();
+            }
+        }
+        
         $data = [
             'title' => 'Tambah RHK',
-            'skp_id' => $skpId
+            'skp_id' => $skpId,
+            'intervensiList' => $intervensiList
         ];
         
         return view('rhk/create', $data);
@@ -55,6 +77,14 @@ class Rhk extends BaseController
             'target_waktu' => $this->request->getPost('target_waktu'),
             'bobot' => $this->request->getPost('bobot') ?: 0
         ];
+        
+        // ========== INI PENTING: Simpan intervensi dari atasan ==========
+        $intervensiId = $this->request->getPost('intervensi_dari_id');
+        if (!empty($intervensiId)) {
+            $data['intervensi_dari_type'] = $this->request->getPost('intervensi_dari_type');
+            $data['intervensi_dari_id'] = $intervensiId;
+        }
+        // =================================================================
         
         $rhkModel->insert($data);
         

@@ -6,13 +6,14 @@ class Dashboard extends BaseController
 {
     public function index()
     {
-        $role = session()->get('role');
-        $nama = session()->get('nama_lengkap');
+        if (!session()->get('logged_in')) {
+            return redirect()->to('/login');
+        }
         
         $data = [
-            'title' => 'Dashboard',
-            'nama'  => $nama,
-            'role'  => $role,
+            'nama' => session()->get('nama_lengkap'),
+            'role' => session()->get('role'),
+            'unit_kerja' => session()->get('unit_kerja')
         ];
         
         return view('dashboard/index', $data);

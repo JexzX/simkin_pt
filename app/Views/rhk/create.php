@@ -71,6 +71,23 @@
                             <?= csrf_field() ?>
                             <input type="hidden" name="skp_id" value="<?= $skp_id ?>">
 
+                            <!-- ========== PILIHAN INTERVENSI DARI ATASAN ========== -->
+                            <?php if(!empty($intervensiList)): ?>
+                            <div class="mb-3">
+                                <label class="form-label">Rencana Hasil Kerja Atasan yang Diintervensi</label>
+                                <select name="intervensi_dari_id" class="form-control">
+                                    <option value="">-- Pilih Intervensi --</option>
+                                    <?php foreach($intervensiList as $intervensi): ?>
+                                    <option value="<?= $intervensi['id'] ?>">
+                                        <?= $intervensi['nama_rhk'] ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="hidden" name="intervensi_dari_type" value="rhk_atasan">
+                            </div>
+                            <?php endif; ?>
+                            <!-- =================================================== -->
+
                             <div class="mb-3">
                                 <label class="form-label">Nama RHK <span class="text-danger">*</span></label>
                                 <input type="text" name="nama_rhk" class="form-control" required>
