@@ -13,12 +13,22 @@ class Penilaian extends BaseController
     public function index()
     {
         $skpModel = new SkpModel();
-        $skpList = $skpModel->getSkpForApproval(session()->get('id'));
+        $userId = session()->get('id');
+        $userRole = session()->get('role');
         
-        // Filter hanya SKP yang sudah disetujui dan siap dinilai
-        $skpList = array_filter($skpList, function($skp) {
-            return $skp['status'] == 'disetujui';
-        });
+        // Ambil SKP yang sudah disetujui dan siap dinilai (bawahan)
+        $query = $skpModel->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan, periode.tahun, periode.nama_periode')
+                          ->join('users', 'users.id = skp_master.user_id')
+                          ->join('periode', 'periode.id = skp_master.periode_id')
+                          ->where('skp_master.status', 'disetujui');
+        
+        if ($userRole === 'rektor') {
+            // Rektor bisa nilai semua
+        } else {
+            $query->where('users.atasan_id', $userId);
+        }
+        
+        $skpList = $query->orderBy('skp_master.tanggal_approval', 'DESC')->findAll();
         
         $data = [
             'title' => 'Penilaian SKP',
@@ -45,7 +55,7 @@ class Penilaian extends BaseController
         $rhkModel = new RhkModel();
         $realisasiModel = new RealisasiModel();
         
-        $rhkList = $rhkModel->getRhkWithIndikator($skpId);
+        $rhkList = $rhkModel->getBySkp($skpId);
         $progress = $realisasiModel->getProgressBySkp($skpId);
         
         $data = [
@@ -108,7 +118,7 @@ class Penilaian extends BaseController
         // Update SKP status and nilai
         $skpModel = new SkpModel();
         $skpModel->update($skpId, [
-            'status' => 'dinilai',
+            'status' => 'selesai',
             'nilai_akhir' => $nilaiTotal,
             'predikat' => $predikat
         ]);

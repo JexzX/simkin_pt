@@ -8,7 +8,7 @@ class RhkIndikatorModel extends Model
 {
     protected $table = 'rhk_indikator';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['rhk_id', 'indikator', 'target', 'perspektif'];
+    protected $allowedFields = ['rhk_id', 'indikator', 'target', 'aspek'];
     protected $useTimestamps = false;
     protected $returnType = 'array';
 

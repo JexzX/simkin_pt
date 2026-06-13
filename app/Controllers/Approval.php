@@ -13,10 +13,9 @@ class Approval extends BaseController
         $userId = session()->get('id');
         $userRole = session()->get('role');
         
-        // Ambil SKP bawahan yang menunggu approval
         $skpList = $skpModel->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan')
                             ->join('users', 'users.id = skp_master.user_id')
-                            ->where('skp_master.status', 'menunggu_approval')
+                            ->where('skp_master.status', 'pengajuan')
                             ->where('users.atasan_id', $userId)
                             ->orderBy('skp_master.tanggal_pengajuan', 'DESC')
                             ->findAll();
@@ -40,17 +39,14 @@ class Approval extends BaseController
         
         $catatan = $this->request->getPost('catatan');
         
-        // Update status SKP
         $skpModel->update($id, [
             'status' => 'disetujui',
             'catatan_atasan' => $catatan,
             'tanggal_approval' => date('Y-m-d H:i:s')
         ]);
         
-        // Tambah riwayat
-        $this->addRiwayatApproval($id, 'menunggu_approval', 'disetujui');
+        $this->addRiwayatApproval($id, 'pengajuan', 'disetujui');
         
-        // Notifikasi ke pembuat SKP
         $notifikasiModel = new NotifikasiModel();
         $notifikasiModel->addNotifikasi(
             $skp['user_id'],
@@ -73,26 +69,23 @@ class Approval extends BaseController
         
         $catatan = $this->request->getPost('catatan');
         
-        // Update status SKP
         $skpModel->update($id, [
-            'status' => 'ditolak',
+            'status' => 'draft',
             'catatan_atasan' => $catatan,
             'tanggal_approval' => date('Y-m-d H:i:s')
         ]);
         
-        // Tambah riwayat
-        $this->addRiwayatApproval($id, 'menunggu_approval', 'ditolak');
+        $this->addRiwayatApproval($id, 'pengajuan', 'draft');
         
-        // Notifikasi ke pembuat SKP
         $notifikasiModel = new NotifikasiModel();
         $notifikasiModel->addNotifikasi(
             $skp['user_id'],
-            'SKP Ditolak',
-            'SKP Anda ditolak oleh ' . session()->get('nama_lengkap') . '. Catatan: ' . $catatan,
+            'SKP Perlu Revisi',
+            'SKP Anda perlu direvisi oleh ' . session()->get('nama_lengkap') . '. Catatan: ' . $catatan,
             '/skp/detail/' . $id
         );
         
-        return redirect()->back()->with('success', 'SKP ditolak');
+        return redirect()->back()->with('success', 'SKP dikembalikan untuk revisi');
     }
 
     private function addRiwayatApproval($skpId, $dariStatus, $keStatus)

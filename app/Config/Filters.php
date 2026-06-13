@@ -7,6 +7,7 @@ use CodeIgniter\Filters\CSRF;
 use CodeIgniter\Filters\DebugToolbar;
 use CodeIgniter\Filters\Honeypot;
 use App\Filters\AuthFilter;
+use App\Filters\RoleFilter;
 
 class Filters extends BaseConfig
 {
@@ -15,6 +16,7 @@ class Filters extends BaseConfig
         'toolbar'       => DebugToolbar::class,
         'honeypot'      => Honeypot::class,
         'auth'          => AuthFilter::class,
+        'role'          => RoleFilter::class,
     ];
 
     public $globals = [

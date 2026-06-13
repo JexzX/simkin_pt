@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\RhkModel;
 use App\Models\SkpModel;
 use App\Models\UserModel;
+use App\Models\RhkIndikatorModel;
 
 class Rhk extends BaseController
 {
@@ -24,28 +25,32 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'SKP sudah diajukan, tidak dapat menambah RHK');
         }
         
-        // Ambil intervensi dari atasan (RHK atasan yang sudah disetujui)
+        // Ambil RHK atasan yang sudah disetujui untuk intervensi
         $intervensiList = [];
         $currentUserId = session()->get('id');
         $currentUser = $userModel->find($currentUserId);
         $atasanId = $currentUser['atasan_id'] ?? null;
         
         if ($atasanId) {
-            // Cari SKP atasan yang sudah disetujui
             $skpAtasan = $skpModel->where('user_id', $atasanId)
                                   ->where('status', 'disetujui')
                                   ->first();
             
             if ($skpAtasan) {
-                // Ambil RHK dari SKP atasan
                 $intervensiList = $rhkModel->where('skp_id', $skpAtasan['id'])->findAll();
             }
         }
         
+        // Hitung total bobot existing RHK
+        $totalBobotSaatIni = $rhkModel->hitungTotalBobot($skpId);
+        $sisaBobot = 100 - $totalBobotSaatIni;
+        
         $data = [
             'title' => 'Tambah RHK',
             'skp_id' => $skpId,
-            'intervensiList' => $intervensiList
+            'intervensiList' => $intervensiList,
+            'skp' => $skp,
+            'sisaBobot' => $sisaBobot
         ];
         
         return view('rhk/create', $data);
@@ -55,36 +60,18 @@ class Rhk extends BaseController
     {
         $rhkModel = new RhkModel();
         
-        $rules = [
-            'skp_id' => 'required|numeric',
-            'nama_rhk' => 'required|min_length[3]',
-            'jenis_rhk' => 'required|in_list[kuantitatif,kualitatif]',
-            'klasifikasi' => 'required|in_list[utama,tambahan]'
-        ];
-        
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-        
         $data = [
             'skp_id' => $this->request->getPost('skp_id'),
             'nama_rhk' => $this->request->getPost('nama_rhk'),
-            'jenis_rhk' => $this->request->getPost('jenis_rhk'),
             'klasifikasi' => $this->request->getPost('klasifikasi'),
-            'target_kuantitas' => $this->request->getPost('target_kuantitas') ?: null,
-            'target_satuan' => $this->request->getPost('target_satuan'),
-            'target_kualitas' => $this->request->getPost('target_kualitas'),
-            'target_waktu' => $this->request->getPost('target_waktu'),
             'bobot' => $this->request->getPost('bobot') ?: 0
         ];
         
-        // ========== INI PENTING: Simpan intervensi dari atasan ==========
         $intervensiId = $this->request->getPost('intervensi_dari_id');
         if (!empty($intervensiId)) {
-            $data['intervensi_dari_type'] = $this->request->getPost('intervensi_dari_type');
+            $data['intervensi_dari_type'] = 'rhk_atasan';
             $data['intervensi_dari_id'] = $intervensiId;
         }
-        // =================================================================
         
         $rhkModel->insert($data);
         
@@ -111,7 +98,8 @@ class Rhk extends BaseController
         $data = [
             'title' => 'Edit RHK',
             'rhk' => $rhk,
-            'skp_id' => $rhk['skp_id']
+            'skp_id' => $rhk['skp_id'],
+            'skp' => $skp
         ];
         
         return view('rhk/edit', $data);
@@ -135,12 +123,7 @@ class Rhk extends BaseController
         
         $data = [
             'nama_rhk' => $this->request->getPost('nama_rhk'),
-            'jenis_rhk' => $this->request->getPost('jenis_rhk'),
             'klasifikasi' => $this->request->getPost('klasifikasi'),
-            'target_kuantitas' => $this->request->getPost('target_kuantitas') ?: null,
-            'target_satuan' => $this->request->getPost('target_satuan'),
-            'target_kualitas' => $this->request->getPost('target_kualitas'),
-            'target_waktu' => $this->request->getPost('target_waktu'),
             'bobot' => $this->request->getPost('bobot') ?: 0
         ];
         
@@ -171,5 +154,71 @@ class Rhk extends BaseController
         
         return redirect()->to('/skp/detail/' . $skpId)
                         ->with('success', 'RHK berhasil dihapus');
+    }
+
+    // Indikator CRUD
+    public function indikatorCreate($rhkId)
+    {
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($rhkId);
+        
+        if (!$rhk) {
+            return redirect()->back()->with('error', 'RHK tidak ditemukan');
+        }
+        
+        $skpModel = new SkpModel();
+        $skp = $skpModel->find($rhk['skp_id']);
+        
+        if ($skp['user_id'] != session()->get('id') || $skp['status'] != 'draft') {
+            return redirect()->back()->with('error', 'Tidak dapat menambah indikator');
+        }
+        
+        $skp = $skpModel->getSkpWithDetails($rhk['skp_id']);
+        
+        $data = [
+            'title' => 'Tambah Indikator',
+            'rhk' => $rhk,
+            'skp' => $skp
+        ];
+        
+        return view('rhk/indikator_create', $data);
+    }
+    
+    public function indikatorStore()
+    {
+        $indikatorModel = new RhkIndikatorModel();
+        
+        $data = [
+            'rhk_id' => $this->request->getPost('rhk_id'),
+            'indikator' => $this->request->getPost('indikator'),
+            'target' => $this->request->getPost('target'),
+            'aspek' => $this->request->getPost('aspek')
+        ];
+        
+        $indikatorModel->insert($data);
+        
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($data['rhk_id']);
+        
+        return redirect()->to('/skp/detail/' . $rhk['skp_id'])
+                        ->with('success', 'Indikator berhasil ditambahkan');
+    }
+    
+    public function indikatorDelete($id)
+    {
+        $indikatorModel = new RhkIndikatorModel();
+        $indikator = $indikatorModel->find($id);
+        
+        if (!$indikator) {
+            return redirect()->back()->with('error', 'Indikator tidak ditemukan');
+        }
+        
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($indikator['rhk_id']);
+        
+        $indikatorModel->delete($id);
+        
+        return redirect()->to('/skp/detail/' . $rhk['skp_id'])
+                        ->with('success', 'Indikator berhasil dihapus');
     }
 }

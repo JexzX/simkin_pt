@@ -60,6 +60,18 @@
     font-weight: 600;
 }
 
+/* Content Wrapper for Layout */
+.content-wrapper {
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.navbar-top {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px 20px;
+}
+
 /* Sidebar Active */
 .sidebar .nav-link.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

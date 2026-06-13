@@ -9,7 +9,7 @@ class SkpModel extends Model
     protected $table = 'skp_master';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'user_id', 'periode_id', 'status', 'catatan_atasan',
+        'user_id', 'periode_id', 'tanggal_mulai', 'tanggal_selesai', 'pendekatan', 'status', 'catatan_atasan',
         'nilai_akhir', 'predikat', 'tanggal_pengajuan', 'tanggal_approval'
     ];
     
@@ -38,7 +38,7 @@ class SkpModel extends Model
     {
         return $this->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan')
                     ->join('users', 'users.id = skp_master.user_id')
-                    ->where('skp_master.status', 'menunggu_approval')
+                    ->where('skp_master.status', 'pengajuan')
                     ->where('users.atasan_id', $atasanId)
                     ->orderBy('skp_master.tanggal_pengajuan', 'DESC')
                     ->findAll();
