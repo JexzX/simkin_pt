@@ -82,12 +82,15 @@ class Skp extends BaseController
         
         foreach ($rhkList as &$rhk) {
             $rhk['indikator'] = $indikatorModel->getByRhk($rhk['id']);
-            // Ambil nama RHK atasan yang diintervensi
             if (!empty($rhk['intervensi_dari_id'])) {
                 $rhkAtasan = $rhkModel->find($rhk['intervensi_dari_id']);
                 $rhk['intervensi_dari_nama'] = $rhkAtasan['nama_rhk'] ?? '-';
+                $rhk['intervensi_dari_data'] = $rhkAtasan;
+                $rhk['intervensi_dari_indikator'] = $indikatorModel->getByRhk($rhk['intervensi_dari_id']);
             } else {
                 $rhk['intervensi_dari_nama'] = '-';
+                $rhk['intervensi_dari_data'] = null;
+                $rhk['intervensi_dari_indikator'] = [];
             }
         }
         

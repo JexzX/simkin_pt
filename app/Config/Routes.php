@@ -44,6 +44,8 @@ $routes->get('/rhk/delete/(:num)', 'Rhk::delete/$1', ['filter' => 'auth']);
 // RHK Indikator routes
 $routes->get('/rhk/indikator/create/(:num)', 'Rhk::indikatorCreate/$1', ['filter' => 'auth']);
 $routes->post('/rhk/indikator/store', 'Rhk::indikatorStore', ['filter' => 'auth']);
+$routes->get('/rhk/indikator/edit/(:num)', 'Rhk::indikatorEdit/$1', ['filter' => 'auth']);
+$routes->post('/rhk/indikator/update/(:num)', 'Rhk::indikatorUpdate/$1', ['filter' => 'auth']);
 $routes->get('/rhk/indikator/delete/(:num)', 'Rhk::indikatorDelete/$1', ['filter' => 'auth']);
 
 // Realisasi routes

@@ -125,55 +125,79 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th class="text-center" style="width:40px">No</th>
-                                        <th style="min-width:200px">RHK Pimpinan yang Diintervensi</th>
-                                        <th style="min-width:200px">Rencana Hasil Kerja</th>
-                                        <th style="width:120px">Aspek</th>
-                                        <th style="min-width:200px">Indikator Kinerja Individu</th>
+                                        <th style="min-width:220px">RHK Pimpinan yang Diintervensi</th>
+                                        <th style="min-width:220px">Rencana Hasil Kerja</th>
+                                        <th style="width:100px">Aspek</th>
+                                        <th style="min-width:220px">Indikator Kinerja Individu</th>
                                         <th style="min-width:150px">Target Tahunan</th>
-                                        <th class="text-center" style="width:140px">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php $no=1; foreach($rhkList as $rhk):
-                                        $jmlIndikator = count($rhk['indikator']);
-                                        $rowspan = max($jmlIndikator, 1);
+                                        $jml = count($rhk['indikator']);
+                                        $rowspan = max($jml, 1) + 1; // +1 untuk baris Tambah Indikator
                                     ?>
                                     <tr>
-                                        <td class="text-center align-middle" rowspan="<?= $rowspan ?>"><?= $no++ ?></td>
-                                        <td class="align-middle" rowspan="<?= $rowspan ?>">
-                                            <small><?= esc($rhk['intervensi_dari_nama'] ?? '-') ?></small>
-                                            <?php if (!empty($rhk['intervensi_dari_id'])): ?>
-                                            <br><span class="badge bg-light text-muted mt-1"><i class="fas fa-arrow-down"></i> Intervensi</span>
-                                            <?php endif; ?>
+                                        <td class="text-center align-middle" rowspan="<?= $rowspan ?>">
+                                            <?= $no++ ?>
                                         </td>
-                                        <td class="align-middle fw-semibold" rowspan="<?= $rowspan ?>">
-                                            <?= esc($rhk['nama_rhk']) ?>
+                                        <td class="align-middle" rowspan="<?= $rowspan ?>">
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                <small class="fw-semibold"><?= esc($rhk['intervensi_dari_nama'] ?? '-') ?></small>
+                                                <?php if (!empty($rhk['intervensi_dari_id']) && !empty($rhk['intervensi_dari_data'])): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal" data-bs-target="#infoAtasanModal<?= $rhk['id'] ?>" title="Info RHK Atasan"><i class="fas fa-info-circle"></i></button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle" rowspan="<?= $rowspan ?>">
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                <span class="fw-semibold"><?= esc($rhk['nama_rhk']) ?></span>
+                                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal" data-bs-target="#infoRhkModal<?= $rhk['id'] ?>" title="Info RHK"><i class="fas fa-info-circle"></i></button>
+                                                <?php if($skp['status'] == 'draft'): ?>
+                                                <a href="<?= base_url('/rhk/edit/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-warning py-0 px-1" title="Edit RHK"><i class="fas fa-edit"></i></a>
+                                                <a href="<?= base_url('/rhk/delete/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="return confirm('Hapus RHK ini?')" title="Hapus RHK"><i class="fas fa-trash"></i></a>
+                                                <?php endif; ?>
+                                            </div>
                                             <br><small class="text-muted">(<?= ucfirst($rhk['klasifikasi']) ?>) — Bobot: <?= $rhk['bobot'] ?>%</small>
                                         </td>
-                                        <?php if($jmlIndikator > 0): $first = true; foreach($rhk['indikator'] as $ind): ?>
+
+                                        <?php if($jml > 0): $first = true; foreach($rhk['indikator'] as $ind): ?>
                                         <?php if(!$first): ?>
                                     </tr><tr>
                                         <?php endif; ?>
-                                        <td><span class="badge bg-info"><?= esc($ind['aspek'] ?? '-') ?></span></td>
-                                        <td><?= esc($ind['indikator']) ?></td>
-                                        <td><?= esc($ind['target'] ?? '-') ?></td>
-                                        <td class="text-center">
-                                            <?php if($skp['status'] == 'draft'): ?>
-                                            <a href="<?= base_url('/rhk/indikator/delete/' . $ind['id']) ?>" class="text-danger" onclick="return confirm('Hapus indikator ini?')"><i class="fas fa-times"></i></a>
-                                            <?php endif; ?>
+                                        <td class="text-center align-middle"><span class="badge bg-info"><?= esc($ind['aspek'] ?? '-') ?></span></td>
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                <span><?= esc($ind['indikator']) ?></span>
+                                                <?php if($skp['status'] == 'draft'): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal" data-bs-target="#infoIndikatorModal<?= $ind['id'] ?>" title="Info Indikator"><i class="fas fa-info-circle"></i></button>
+                                                <a href="<?= base_url('/rhk/indikator/edit/' . $ind['id']) ?>" class="btn btn-sm btn-outline-warning py-0 px-1" title="Edit Indikator"><i class="fas fa-edit"></i></a>
+                                                <a href="<?= base_url('/rhk/indikator/delete/' . $ind['id']) ?>" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="return confirm('Hapus indikator ini?')" title="Hapus Indikator"><i class="fas fa-trash"></i></a>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
+                                        <td class="align-middle"><?= esc($ind['target'] ?? '-') ?></td>
                                         <?php $first = false; endforeach; ?>
+                                        <tr class="table-light">
+                                            <td colspan="3" class="text-center py-2">
+                                                <?php if($skp['status'] == 'draft'): ?>
+                                                <a href="<?= base_url('/rhk/indikator/create/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Tambah Indikator</a>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
                                         <?php else: ?>
-                                        <td class="text-muted align-middle">-</td>
-                                        <td class="text-muted align-middle">-</td>
-                                        <td class="text-muted align-middle">-</td>
-                                        <td class="text-center align-middle">
+                                        <td class="text-muted align-middle text-center">-</td>
+                                        <td class="text-muted align-middle text-center">-</td>
+                                        <td class="text-muted align-middle text-center">-</td>
+                                    </tr>
+                                    <tr class="table-light">
+                                        <td colspan="3" class="text-center py-2">
                                             <?php if($skp['status'] == 'draft'): ?>
-                                            <a href="<?= base_url('/rhk/indikator/create/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Indikator</a>
+                                            <a href="<?= base_url('/rhk/indikator/create/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Tambah Indikator</a>
                                             <?php endif; ?>
                                         </td>
-                                        <?php endif; ?>
                                     </tr>
+                                        <?php endif; ?>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
@@ -212,6 +236,104 @@
             </div>
         </div>
     </div>
+
+    <?php foreach($rhkList as $rhk): ?>
+
+    <?php if(!empty($rhk['intervensi_dari_data'])): ?>
+    <div class="modal fade" id="infoAtasanModal<?= $rhk['id'] ?>" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail RHK Pimpinan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tr><th style="width:120px">RHK</th><td><?= esc($rhk['intervensi_dari_data']['nama_rhk'] ?? '-') ?></td></tr>
+                        <tr><th>Klasifikasi</th><td><?= ucfirst($rhk['intervensi_dari_data']['klasifikasi'] ?? '-') ?></td></tr>
+                        <tr><th>Bobot</th><td><?= ($rhk['intervensi_dari_data']['bobot'] ?? '0') ?>%</td></tr>
+                    </table>
+                    <?php if(!empty($rhk['intervensi_dari_indikator'])): ?>
+                    <hr>
+                    <h6>Indikator:</h6>
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead><tr><th>Aspek</th><th>Indikator</th><th>Target</th></tr></thead>
+                        <tbody>
+                        <?php foreach($rhk['intervensi_dari_indikator'] as $i): ?>
+                        <tr><td><?= esc($i['aspek']) ?></td><td><?= esc($i['indikator']) ?></td><td><?= esc($i['target'] ?? '-') ?></td></tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="modal fade" id="infoRhkModal<?= $rhk['id'] ?>" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail RHK</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tr><th style="width:120px">RHK</th><td><?= esc($rhk['nama_rhk']) ?></td></tr>
+                        <tr><th>Klasifikasi</th><td><?= ucfirst($rhk['klasifikasi']) ?></td></tr>
+                        <tr><th>Bobot</th><td><?= $rhk['bobot'] ?>%</td></tr>
+                        <?php if(!empty($rhk['intervensi_dari_nama']) && $rhk['intervensi_dari_nama'] != '-'): ?>
+                        <tr><th>Intervensi dari</th><td><?= esc($rhk['intervensi_dari_nama']) ?></td></tr>
+                        <?php endif; ?>
+                    </table>
+                    <?php if(!empty($rhk['indikator'])): ?>
+                    <hr>
+                    <h6>Indikator:</h6>
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead><tr><th>Aspek</th><th>Indikator</th><th>Target</th></tr></thead>
+                        <tbody>
+                        <?php foreach($rhk['indikator'] as $i): ?>
+                        <tr><td><?= esc($i['aspek']) ?></td><td><?= esc($i['indikator']) ?></td><td><?= esc($i['target'] ?? '-') ?></td></tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php foreach($rhk['indikator'] as $ind): ?>
+    <div class="modal fade" id="infoIndikatorModal<?= $ind['id'] ?>" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Indikator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tr><th style="width:120px">Aspek</th><td><?= esc($ind['aspek'] ?? '-') ?></td></tr>
+                        <tr><th>Indikator</th><td><?= esc($ind['indikator']) ?></td></tr>
+                        <tr><th>Target</th><td><?= esc($ind['target'] ?? '-') ?></td></tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+
+    <?php endforeach; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

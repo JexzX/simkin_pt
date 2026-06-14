@@ -204,6 +204,68 @@ class Rhk extends BaseController
                         ->with('success', 'Indikator berhasil ditambahkan');
     }
     
+    public function indikatorEdit($id)
+    {
+        $indikatorModel = new RhkIndikatorModel();
+        $indikator = $indikatorModel->find($id);
+        
+        if (!$indikator) {
+            return redirect()->back()->with('error', 'Indikator tidak ditemukan');
+        }
+        
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($indikator['rhk_id']);
+        
+        $skpModel = new SkpModel();
+        $skp = $skpModel->find($rhk['skp_id']);
+        
+        if ($skp['user_id'] != session()->get('id') || $skp['status'] != 'draft') {
+            return redirect()->back()->with('error', 'Tidak dapat mengedit indikator');
+        }
+        
+        $skpWithDetails = $skpModel->getSkpWithDetails($rhk['skp_id']);
+        
+        $data = [
+            'title' => 'Edit Indikator',
+            'indikator' => $indikator,
+            'rhk' => $rhk,
+            'skp' => $skpWithDetails
+        ];
+        
+        return view('rhk/indikator_edit', $data);
+    }
+    
+    public function indikatorUpdate($id)
+    {
+        $indikatorModel = new RhkIndikatorModel();
+        $indikator = $indikatorModel->find($id);
+        
+        if (!$indikator) {
+            return redirect()->back()->with('error', 'Indikator tidak ditemukan');
+        }
+        
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($indikator['rhk_id']);
+        
+        $skpModel = new SkpModel();
+        $skp = $skpModel->find($rhk['skp_id']);
+        
+        if ($skp['user_id'] != session()->get('id') || $skp['status'] != 'draft') {
+            return redirect()->back()->with('error', 'Tidak dapat mengedit indikator');
+        }
+        
+        $data = [
+            'aspek' => $this->request->getPost('aspek'),
+            'indikator' => $this->request->getPost('indikator'),
+            'target' => $this->request->getPost('target'),
+        ];
+        
+        $indikatorModel->update($id, $data);
+        
+        return redirect()->to('/skp/detail/' . $rhk['skp_id'])
+                        ->with('success', 'Indikator berhasil diupdate');
+    }
+
     public function indikatorDelete($id)
     {
         $indikatorModel = new RhkIndikatorModel();
