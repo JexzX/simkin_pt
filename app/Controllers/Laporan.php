@@ -13,10 +13,12 @@ class Laporan extends BaseController
     public function skp()
     {
         $periodeModel = new PeriodeModel();
+        $userModel = new UserModel();
         $periodeList = $periodeModel->findAll();
         
         $periodeId = $this->request->getGet('periode_id');
         $unitKerja = $this->request->getGet('unit_kerja');
+        $filterBawahan = $this->request->getGet('bawahan_saya');
         
         $skpModel = new SkpModel();
         $query = $skpModel->select('skp_master.*, users.nama_lengkap, users.unit_kerja, users.jabatan')
@@ -30,6 +32,16 @@ class Laporan extends BaseController
             $query->where('users.unit_kerja', $unitKerja);
         }
         
+        $userId = session()->get('id');
+        if ($filterBawahan) {
+            $bawahanIds = $userModel->where('atasan_id', $userId)->findColumn('id') ?? [];
+            if (!empty($bawahanIds)) {
+                $query->whereIn('skp_master.user_id', $bawahanIds);
+            } else {
+                $query->where('1=0');
+            }
+        }
+        
         $skpList = $query->orderBy('users.unit_kerja', 'ASC')->findAll();
         
         $data = [
@@ -37,7 +49,8 @@ class Laporan extends BaseController
             'skpList' => $skpList,
             'periodeList' => $periodeList,
             'periodeId' => $periodeId,
-            'unitKerja' => $unitKerja
+            'unitKerja' => $unitKerja,
+            'filterBawahan' => $filterBawahan
         ];
         
         return view('laporan/skp', $data);
@@ -46,13 +59,15 @@ class Laporan extends BaseController
     public function realisasi()
     {
         $periodeModel = new PeriodeModel();
+        $userModel = new UserModel();
         $periodeList = $periodeModel->findAll();
         
         $periodeId = $this->request->getGet('periode_id');
-        $bulan = $this->request->getGet('bulan') ?: date('n');
+        $bulan = $this->request->getGet('bulan');
+        $filterBawahan = $this->request->getGet('bawahan_saya');
         
         $realisasiModel = new RealisasiModel();
-        $query = $realisasiModel->select('realisasi.*, users.nama_lengkap, users.unit_kerja, rhk.nama_rhk')
+        $query = $realisasiModel->select('realisasi.*, users.nama_lengkap, users.unit_kerja, rhk.nama_rhk, skp_master.id as skp_id')
                                 ->join('rhk_indikator', 'rhk_indikator.id = realisasi.rhk_indikator_id')
                                 ->join('rhk', 'rhk.id = rhk_indikator.rhk_id')
                                 ->join('skp_master', 'skp_master.id = rhk.skp_id')
@@ -66,6 +81,18 @@ class Laporan extends BaseController
             $query->where('realisasi.bulan', $bulan);
         }
         
+        $bulan = $bulan ?: date('n');
+        
+        $userId = session()->get('id');
+        if ($filterBawahan) {
+            $bawahanIds = $userModel->where('atasan_id', $userId)->findColumn('id') ?? [];
+            if (!empty($bawahanIds)) {
+                $query->whereIn('skp_master.user_id', $bawahanIds);
+            } else {
+                $query->where('1=0');
+            }
+        }
+        
         $realisasiList = $query->orderBy('users.unit_kerja', 'ASC')->findAll();
         
         $data = [
@@ -73,7 +100,8 @@ class Laporan extends BaseController
             'realisasiList' => $realisasiList,
             'periodeList' => $periodeList,
             'periodeId' => $periodeId,
-            'bulan' => $bulan
+            'bulan' => $bulan,
+            'filterBawahan' => $filterBawahan
         ];
         
         return view('laporan/realisasi', $data);

@@ -42,102 +42,74 @@
                     </div>
                 </div>
 
-                <?php if(!empty($rhkList)): ?>
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0"><i class="fas fa-list-check me-2"></i>Daftar RHK & Realisasi</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover mb-0">
+                <form action="<?= base_url('/penilaian/store') ?>" method="post">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="skp_id" value="<?= $skp['id'] ?>">
+
+                    <?php if(!empty($rhkList)): ?>
+                    <?php foreach($rhkList as $rhk): ?>
+                    <div class="card mb-3">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0"><i class="fas fa-list-check me-2"></i><?= esc($rhk['nama_rhk']) ?></h6>
+                            <small class="text-muted"><?= ucfirst($rhk['klasifikasi']) ?></small>
+                        </div>
+                        <div class="card-body p-0">
+                            <?php $indikators = $rhkIndikators[$rhk['id']] ?? []; ?>
+                            <?php if(!empty($indikators)): ?>
+                            <table class="table table-bordered mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="text-center" style="width:40px">No</th>
-                                        <th>RHK</th>
-                                        <th>Bobot</th>
+                                        <th style="width:40px">No</th>
+                                        <th>Indikator</th>
                                         <th>Target</th>
-                                        <th>Progress Realisasi</th>
+                                        <th>Realisasi</th>
+                                        <th style="width:150px">Nilai (0-100)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php $no=1; foreach($rhkList as $rhk): ?>
+                                    <?php $no=1; foreach($indikators as $ind): ?>
                                     <tr>
-                                        <td class="text-center"><?= $no++ ?></td>
-                                        <td><?= $rhk['nama_rhk'] ?></td>
-                                        <td><?= $rhk['bobot'] ?>%</td>
-                                        <td><?= $rhk['target_kuantitas'] ?> <?= $rhk['target_satuan'] ?? '' ?></td>
+                                        <td><?= $no++ ?></td>
                                         <td>
-                                            <?php if(isset($progress[$rhk['id']])): ?>
-                                                <?php $p = $progress[$rhk['id']]; ?>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="progress flex-grow-1" style="height:8px">
-                                                        <div class="progress-bar <?= $p['persen'] >= 100 ? 'bg-success' : ($p['persen'] >= 50 ? 'bg-info' : 'bg-warning') ?>" style="width:<?= $p['persen'] ?>%"></div>
-                                                    </div>
-                                                    <small class="fw-semibold"><?= $p['persen'] ?>%</small>
-                                                </div>
-                                                <small class="text-muted"><?= $p['realisasi'] ?> / <?= $p['target'] ?></small>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic">Belum ada realisasi</span>
+                                            <?php if($ind['aspek']): ?>
+                                            <span class="badge bg-info me-1"><?= esc($ind['aspek']) ?></span>
                                             <?php endif; ?>
+                                            <?= esc($ind['indikator']) ?>
+                                        </td>
+                                        <td><?= esc($ind['target'] ?? '-') ?></td>
+                                        <td><?= $ind['total_realisasi'] ?: '-' ?></td>
+                                        <td>
+                                            <input type="number" name="nilai_indikator[<?= $ind['id'] ?>]" class="form-control text-center nilai-input" min="0" max="100" value="<?= $rincianNilai[$ind['id']] ?? '' ?>" required>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            <?php else: ?>
+                            <div class="p-3 text-muted fst-italic">Tidak ada indikator</div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                </div>
-                <?php endif; ?>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
 
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Form Penilaian</h6>
-                    </div>
-                    <div class="card-body">
-                        <form action="<?= base_url('/penilaian/store') ?>" method="post">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="skp_id" value="<?= $skp['id'] ?>">
-
-                            <div class="row g-4 mb-4">
-                                <div class="col-md-4">
-                                    <div class="card bg-light border-0">
-                                        <div class="card-body text-center">
-                                            <div class="mb-2">
-                                                <span class="badge bg-primary" style="font-size:0.7rem">Bobot 50%</span>
-                                            </div>
-                                            <label class="form-label fw-semibold">Nilai Kuantitas</label>
-                                            <input type="number" name="nilai_kuantitas" class="form-control text-center form-control-lg" min="0" max="100" required value="<?= $existing['nilai_kuantitas'] ?? '' ?>">
-                                            <small class="text-muted">Rentang 0 - 100</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light border-0">
-                                        <div class="card-body text-center">
-                                            <div class="mb-2">
-                                                <span class="badge bg-info" style="font-size:0.7rem">Bobot 30%</span>
-                                            </div>
-                                            <label class="form-label fw-semibold">Nilai Kualitas</label>
-                                            <input type="number" name="nilai_kualitas" class="form-control text-center form-control-lg" min="0" max="100" required value="<?= $existing['nilai_kualitas'] ?? '' ?>">
-                                            <small class="text-muted">Rentang 0 - 100</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light border-0">
-                                        <div class="card-body text-center">
-                                            <div class="mb-2">
-                                                <span class="badge bg-secondary" style="font-size:0.7rem">Bobot 20%</span>
-                                            </div>
-                                            <label class="form-label fw-semibold">Nilai Waktu</label>
-                                            <input type="number" name="nilai_waktu" class="form-control text-center form-control-lg" min="0" max="100" required value="<?= $existing['nilai_waktu'] ?? '' ?>">
-                                            <small class="text-muted">Rentang 0 - 100</small>
-                                        </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Rata-rata Nilai</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-lg fw-bold text-center" id="rataNilai" value="<?= $existing['nilai_total'] ?? '0' ?>" readonly style="font-size:1.5rem">
+                                        <span class="input-group-text fw-semibold" id="predikatLabel"><?= $existing['predikat'] ?? '-' ?></span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="mb-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="mb-3">
                                 <label class="form-label fw-semibold">Catatan Penilai</label>
                                 <textarea name="catatan_penilai" class="form-control" rows="4" placeholder="Catatan penilaian (opsional)"><?= $existing['catatan_penilai'] ?? '' ?></textarea>
                             </div>
@@ -147,12 +119,47 @@
                                 <button type="submit" class="btn btn-primary" onclick="return confirm('Simpan penilaian ini?')"><i class="fas fa-save me-2"></i>Simpan Penilaian</button>
                                 <a href="<?= base_url('/penilaian') ?>" class="btn btn-secondary"><i class="fas fa-times me-2"></i>Batal</a>
                             </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('.nilai-input');
+        const rataInput = document.getElementById('rataNilai');
+        const predikatLabel = document.getElementById('predikatLabel');
+
+        function hitungRata() {
+            let total = 0, count = 0;
+            inputs.forEach(function(inp) {
+                let v = parseFloat(inp.value);
+                if (!isNaN(v) && v >= 0 && v <= 100) {
+                    total += v;
+                    count++;
+                }
+            });
+            let rata = count > 0 ? (total / count) : 0;
+            rata = Math.round(rata * 100) / 100;
+            rataInput.value = rata;
+
+            let predikat = '-';
+            if (rata >= 91) predikat = 'ISTIMEWA';
+            else if (rata >= 76) predikat = 'BAIK';
+            else if (rata >= 61) predikat = 'CUKUP';
+            else if (rata >= 51) predikat = 'KURANG';
+            else if (rata > 0) predikat = 'BURUK';
+            predikatLabel.textContent = predikat;
+        }
+
+        inputs.forEach(function(inp) {
+            inp.addEventListener('input', hitungRata);
+        });
+
+        hitungRata();
+    });
+    </script>
 </body>
 </html>

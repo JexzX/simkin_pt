@@ -14,14 +14,24 @@ class Skp extends BaseController
     {
         $skpModel = new SkpModel();
         $periodeModel = new PeriodeModel();
+        $userId = session()->get('id');
         
         $periodeAktif = $periodeModel->getActivePeriode();
-        $skpList = $skpModel->getSkpByUser(session()->get('id'), $periodeAktif['id'] ?? null);
+        $skpList = $skpModel->getSkpByUser($userId, $periodeAktif['id'] ?? null);
+        
+        $hasSkpAktif = false;
+        if ($periodeAktif) {
+            $existing = $skpModel->where('user_id', $userId)
+                                 ->where('periode_id', $periodeAktif['id'])
+                                 ->first();
+            $hasSkpAktif = $existing ? true : false;
+        }
         
         $data = [
             'title' => 'Daftar SKP',
             'skpList' => $skpList,
-            'periodeAktif' => $periodeAktif
+            'periodeAktif' => $periodeAktif,
+            'hasSkpAktif' => $hasSkpAktif
         ];
         
         return view('skp/index', $data);
@@ -48,10 +58,16 @@ class Skp extends BaseController
     {
         $skpModel = new SkpModel();
         $userId = session()->get('id');
+        $periodeId = $this->request->getPost('periode_id');
+        
+        $existing = $skpModel->where('user_id', $userId)->where('periode_id', $periodeId)->first();
+        if ($existing) {
+            return redirect()->back()->with('error', 'Anda sudah memiliki SKP untuk periode ini');
+        }
         
         $data = [
             'user_id' => $userId,
-            'periode_id' => $this->request->getPost('periode_id'),
+            'periode_id' => $periodeId,
             'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
             'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
             'pendekatan' => $this->request->getPost('pendekatan'),
@@ -82,19 +98,31 @@ class Skp extends BaseController
         
         foreach ($rhkList as &$rhk) {
             $rhk['indikator'] = $indikatorModel->getByRhk($rhk['id']);
-            if (!empty($rhk['intervensi_dari_id'])) {
-                $rhkAtasan = $rhkModel->find($rhk['intervensi_dari_id']);
-                $rhk['intervensi_dari_nama'] = $rhkAtasan['nama_rhk'] ?? '-';
-                $rhk['intervensi_dari_data'] = $rhkAtasan;
-                $rhk['intervensi_dari_indikator'] = $indikatorModel->getByRhk($rhk['intervensi_dari_id']);
+            if (!empty($rhk['intervensi_indikator_id'])) {
+                $ind = $indikatorModel->find($rhk['intervensi_indikator_id']);
+                $rhk['intervensi_dari_terpilih'] = $ind ? [$ind] : [];
+                if ($ind) {
+                    $rhkAtasan = $rhkModel->find($ind['rhk_id']);
+                    $rhk['intervensi_dari_nama'] = $rhkAtasan['nama_rhk'] ?? '-';
+                    $rhk['intervensi_dari_data'] = $rhkAtasan;
+                    $rhk['intervensi_dari_indikator'] = $indikatorModel->getByRhk($ind['rhk_id']);
+                } else {
+                    $rhk['intervensi_dari_nama'] = '-';
+                    $rhk['intervensi_dari_data'] = null;
+                    $rhk['intervensi_dari_indikator'] = [];
+                }
+            } elseif (!empty($rhk['intervensi_dari_manual'])) {
+                $rhk['intervensi_dari_nama'] = $rhk['intervensi_dari_manual'];
+                $rhk['intervensi_dari_data'] = null;
+                $rhk['intervensi_dari_indikator'] = [];
+                $rhk['intervensi_dari_terpilih'] = [];
             } else {
                 $rhk['intervensi_dari_nama'] = '-';
                 $rhk['intervensi_dari_data'] = null;
                 $rhk['intervensi_dari_indikator'] = [];
+                $rhk['intervensi_dari_terpilih'] = [];
             }
         }
-        
-        $totalBobot = $rhkModel->hitungTotalBobot($id);
         
         $userModel = new UserModel();
         $currentUserId = session()->get('id');
@@ -105,7 +133,6 @@ class Skp extends BaseController
             'title' => 'Detail SKP',
             'skp' => $skp,
             'rhkList' => $rhkList,
-            'totalBobot' => $totalBobot,
             'isAtasan' => $isAtasan,
             'currentUserId' => $currentUserId
         ];
@@ -190,12 +217,6 @@ class Skp extends BaseController
         
         if (!$skp || $skp['user_id'] != session()->get('id')) {
             return redirect()->to('/skp')->with('error', 'SKP tidak ditemukan');
-        }
-        
-        $totalBobot = $rhkModel->hitungTotalBobot($id);
-        
-        if ($totalBobot != 100) {
-            return redirect()->back()->with('error', 'Total bobot RHK harus 100%. Saat ini: ' . $totalBobot . '%');
         }
         
         $rhkList = $rhkModel->getBySkp($id);

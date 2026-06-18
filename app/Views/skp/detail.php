@@ -63,13 +63,8 @@
                                 <p class="fw-semibold mb-0"><?= esc($skp['unit_kerja'] ?? '-') ?></p>
                             </div>
                             <div class="col-md-4">
-                                <small class="text-muted">Total Bobot</small>
-                                <div class="d-flex align-items-center">
-                                    <div class="progress flex-grow-1 me-2" style="height:8px;border-radius:10px;">
-                                        <div class="progress-bar bg-success" style="width:<?= min($totalBobot,100) ?>%;border-radius:10px;"></div>
-                                    </div>
-                                    <strong><?= $totalBobot ?>%</strong>
-                                </div>
+                                <small class="text-muted">Jumlah RHK</small>
+                                <p class="fw-semibold mb-0"><?= count($rhkList) ?> RHK</p>
                             </div>
                         </div>
                     </div>
@@ -91,13 +86,13 @@
                         if (empty($rhk['indikator'])) { $semuaPunyaIndikator = false; break; }
                     }
                     ?>
-                    <?php if(!empty($rhkList) && $totalBobot == 100 && $semuaPunyaIndikator): ?>
+                    <?php if(!empty($rhkList) && $semuaPunyaIndikator): ?>
                     <form action="<?= base_url('/skp/submit/' . $skp['id']) ?>" method="post" class="d-inline">
                         <?= csrf_field() ?>
                         <button type="submit" class="btn btn-success" onclick="return confirm('Ajukan SKP ini ke atasan?')"><i class="fas fa-paper-plane me-2"></i>Ajukan SKP</button>
                     </form>
                     <?php else: ?>
-                    <button class="btn btn-secondary" disabled title="Lengkapi RHK, bobot 100%, dan indikator terlebih dahulu"><i class="fas fa-exclamation-triangle me-2"></i>Ajukan SKP</button>
+                    <button class="btn btn-secondary" disabled title="Lengkapi RHK dan indikator terlebih dahulu"><i class="fas fa-exclamation-triangle me-2"></i>Ajukan SKP</button>
                     <?php endif; ?>
                     <?php endif; ?>
 
@@ -144,8 +139,11 @@
                                         <td class="align-middle" rowspan="<?= $rowspan ?>">
                                             <div class="d-flex align-items-center gap-1 flex-wrap">
                                                 <small class="fw-semibold"><?= esc($rhk['intervensi_dari_nama'] ?? '-') ?></small>
-                                                <?php if (!empty($rhk['intervensi_dari_id']) && !empty($rhk['intervensi_dari_data'])): ?>
+                                                <?php if (!empty($rhk['intervensi_indikator_id']) && !empty($rhk['intervensi_dari_data'])): ?>
                                                 <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" data-bs-toggle="modal" data-bs-target="#infoAtasanModal<?= $rhk['id'] ?>" title="Info RHK Atasan"><i class="fas fa-info-circle"></i></button>
+                                                <?php endif; ?>
+                                                <?php if(!empty($rhk['intervensi_dari_terpilih'])): ?>
+                                                <br><small class="text-muted">Indikator diintervensi: <?= count($rhk['intervensi_dari_terpilih']) ?></small>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
@@ -158,7 +156,7 @@
                                                 <a href="<?= base_url('/rhk/delete/' . $rhk['id']) ?>" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="return confirm('Hapus RHK ini?')" title="Hapus RHK"><i class="fas fa-trash"></i></a>
                                                 <?php endif; ?>
                                             </div>
-                                            <br><small class="text-muted">(<?= ucfirst($rhk['klasifikasi']) ?>) — Bobot: <?= $rhk['bobot'] ?>%</small>
+                                            <br><small class="text-muted">(<?= ucfirst($rhk['klasifikasi']) ?>)</small>
                                         </td>
 
                                         <?php if($jml > 0): $first = true; foreach($rhk['indikator'] as $ind): ?>
@@ -251,16 +249,27 @@
                     <table class="table table-sm table-bordered mb-0">
                         <tr><th style="width:120px">RHK</th><td><?= esc($rhk['intervensi_dari_data']['nama_rhk'] ?? '-') ?></td></tr>
                         <tr><th>Klasifikasi</th><td><?= ucfirst($rhk['intervensi_dari_data']['klasifikasi'] ?? '-') ?></td></tr>
-                        <tr><th>Bobot</th><td><?= ($rhk['intervensi_dari_data']['bobot'] ?? '0') ?>%</td></tr>
                     </table>
                     <?php if(!empty($rhk['intervensi_dari_indikator'])): ?>
                     <hr>
-                    <h6>Indikator:</h6>
+                    <h6>Indikator Tersedia:</h6>
                     <table class="table table-sm table-bordered mb-0">
                         <thead><tr><th>Aspek</th><th>Indikator</th><th>Target</th></tr></thead>
                         <tbody>
                         <?php foreach($rhk['intervensi_dari_indikator'] as $i): ?>
                         <tr><td><?= esc($i['aspek']) ?></td><td><?= esc($i['indikator']) ?></td><td><?= esc($i['target'] ?? '-') ?></td></tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php endif; ?>
+                    <?php if(!empty($rhk['intervensi_dari_terpilih'])): ?>
+                    <hr>
+                    <h6>Indikator yang Diintervensi:</h6>
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead><tr><th>Aspek</th><th>Indikator</th><th>Target</th></tr></thead>
+                        <tbody>
+                        <?php foreach($rhk['intervensi_dari_terpilih'] as $i): ?>
+                        <tr><td><?= esc($i['aspek'] ?? '-') ?></td><td><?= esc($i['indikator']) ?></td><td><?= esc($i['target'] ?? '-') ?></td></tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -285,7 +294,6 @@
                     <table class="table table-sm table-bordered mb-0">
                         <tr><th style="width:120px">RHK</th><td><?= esc($rhk['nama_rhk']) ?></td></tr>
                         <tr><th>Klasifikasi</th><td><?= ucfirst($rhk['klasifikasi']) ?></td></tr>
-                        <tr><th>Bobot</th><td><?= $rhk['bobot'] ?>%</td></tr>
                         <?php if(!empty($rhk['intervensi_dari_nama']) && $rhk['intervensi_dari_nama'] != '-'): ?>
                         <tr><th>Intervensi dari</th><td><?= esc($rhk['intervensi_dari_nama']) ?></td></tr>
                         <?php endif; ?>

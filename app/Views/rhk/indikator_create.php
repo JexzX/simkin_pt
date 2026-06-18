@@ -37,6 +37,13 @@
                             <?= csrf_field() ?>
                             <input type="hidden" name="rhk_id" value="<?= $rhk['id'] ?>">
 
+                            <?php if($isRektor): ?>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Indikator <span class="text-danger">*</span></label>
+                                <textarea name="indikator_manual" class="form-control" rows="3" required placeholder="Contoh: Terciptanya peningkatan mutu pendidikan tinggi yang berdaya saing"></textarea>
+                                <small class="text-muted">Tuliskan indikator secara naratif</small>
+                            </div>
+                            <?php else: ?>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Aspek <span class="text-danger">*</span></label>
                                 <select name="aspek" class="form-select" required>
@@ -57,6 +64,7 @@
                                 <label class="form-label fw-semibold">Target Tahunan <span class="text-danger">*</span></label>
                                 <input type="text" name="target" class="form-control" required placeholder="Contoh: 12 laporan/tahun">
                             </div>
+                            <?php endif; ?>
 
                             <hr>
                             <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Simpan Indikator</button>

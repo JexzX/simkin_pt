@@ -43,6 +43,7 @@
                                     <option value="FEBI" <?= ($unitKerja == 'FEBI') ? 'selected' : '' ?>>FEBI</option>
                                     <option value="FD" <?= ($unitKerja == 'FD') ? 'selected' : '' ?>>FD</option>
                                     <option value="FS" <?= ($unitKerja == 'FS') ? 'selected' : '' ?>>FS</option>
+                                    <option value="Dakwah" <?= ($unitKerja == 'Dakwah') ? 'selected' : '' ?>>Dakwah</option>
                                     <option value="FUAH" <?= ($unitKerja == 'FUAH') ? 'selected' : '' ?>>FUAH</option>
                                     <option value="FST" <?= ($unitKerja == 'FST') ? 'selected' : '' ?>>FST</option>
                                     <option value="BIRO" <?= ($unitKerja == 'BIRO') ? 'selected' : '' ?>>BIRO</option>
@@ -53,6 +54,10 @@
                                 </select>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="bawahan_saya" value="1" id="bawahanCheck" <?= $filterBawahan ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="bawahanCheck">Bawahan Saya</label>
+                                </div>
                                 <button type="submit" class="btn btn-primary me-2"><i class="fas fa-filter me-1"></i> Filter</button>
                                 <a href="<?= base_url('/laporan/export/skp?periode_id=' . $periodeId) ?>" class="btn btn-success"><i class="fas fa-download me-1"></i> Export CSV</a>
                             </div>
@@ -69,6 +74,7 @@
                                         <th>Status</th>
                                         <th class="text-center">Nilai Akhir</th>
                                         <th class="text-center">Predikat</th>
+                                        <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -97,11 +103,14 @@
                                             -
                                             <?php endif; ?>
                                         </td>
+                                        <td class="text-center">
+                                            <a href="<?= base_url('/skp/detail/' . $skp['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> Detail</a>
+                                        </td>
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if(empty($skpList)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">Tidak ada data</td>
+                                        <td colspan="8" class="text-center py-4 text-muted">Tidak ada data</td>
                                     </tr>
                                     <?php endif; ?>
                                 </tbody>

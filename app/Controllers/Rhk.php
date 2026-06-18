@@ -14,6 +14,7 @@ class Rhk extends BaseController
         $skpModel = new SkpModel();
         $rhkModel = new RhkModel();
         $userModel = new UserModel();
+        $indikatorModel = new RhkIndikatorModel();
         
         $skp = $skpModel->find($skpId);
         
@@ -25,11 +26,13 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'SKP sudah diajukan, tidak dapat menambah RHK');
         }
         
-        // Ambil RHK atasan yang sudah disetujui untuk intervensi
-        $intervensiList = [];
         $currentUserId = session()->get('id');
         $currentUser = $userModel->find($currentUserId);
         $atasanId = $currentUser['atasan_id'] ?? null;
+        $isRektor = ($currentUser['role'] === 'rektor');
+        
+        // Ambil RHK atasan yang sudah disetujui untuk intervensi
+        $intervensiList = [];
         
         if ($atasanId) {
             $skpAtasan = $skpModel->where('user_id', $atasanId)
@@ -38,19 +41,18 @@ class Rhk extends BaseController
             
             if ($skpAtasan) {
                 $intervensiList = $rhkModel->where('skp_id', $skpAtasan['id'])->findAll();
+                foreach ($intervensiList as &$rhkAtasan) {
+                    $rhkAtasan['indikator'] = $indikatorModel->getByRhk($rhkAtasan['id']);
+                }
             }
         }
-        
-        // Hitung total bobot existing RHK
-        $totalBobotSaatIni = $rhkModel->hitungTotalBobot($skpId);
-        $sisaBobot = 100 - $totalBobotSaatIni;
         
         $data = [
             'title' => 'Tambah RHK',
             'skp_id' => $skpId,
             'intervensiList' => $intervensiList,
             'skp' => $skp,
-            'sisaBobot' => $sisaBobot
+            'isRektor' => $isRektor
         ];
         
         return view('rhk/create', $data);
@@ -64,14 +66,9 @@ class Rhk extends BaseController
             'skp_id' => $this->request->getPost('skp_id'),
             'nama_rhk' => $this->request->getPost('nama_rhk'),
             'klasifikasi' => $this->request->getPost('klasifikasi'),
-            'bobot' => $this->request->getPost('bobot') ?: 0
+            'intervensi_indikator_id' => $this->request->getPost('intervensi_indikator_id') ?: null,
+            'intervensi_dari_manual' => $this->request->getPost('intervensi_dari_manual') ?: null
         ];
-        
-        $intervensiId = $this->request->getPost('intervensi_dari_id');
-        if (!empty($intervensiId)) {
-            $data['intervensi_dari_type'] = 'rhk_atasan';
-            $data['intervensi_dari_id'] = $intervensiId;
-        }
         
         $rhkModel->insert($data);
         
@@ -95,11 +92,44 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'Tidak dapat mengedit RHK');
         }
         
+        $userModel = new UserModel();
+        $currentUser = $userModel->find(session()->get('id'));
+        $atasanId = $currentUser['atasan_id'] ?? null;
+        $isRektor = ($currentUser['role'] === 'rektor');
+        
+        $indikatorModel = new RhkIndikatorModel();
+        $intervensiList = [];
+        $selectedIndikatorId = $rhk['intervensi_indikator_id'];
+        $selectedRhkId = null;
+        
+        if ($selectedIndikatorId) {
+            $ind = $indikatorModel->find($selectedIndikatorId);
+            if ($ind) {
+                $selectedRhkId = $ind['rhk_id'];
+            }
+        }
+        
+        if ($atasanId) {
+            $atasanSkp = $skpModel->where('user_id', $atasanId)
+                ->where('status', 'disetujui')
+                ->first();
+            if ($atasanSkp) {
+                $intervensiList = $rhkModel->where('skp_id', $atasanSkp['id'])->findAll();
+                foreach ($intervensiList as &$rhkAtasan) {
+                    $rhkAtasan['indikator'] = $indikatorModel->getByRhk($rhkAtasan['id']);
+                }
+            }
+        }
+        
         $data = [
             'title' => 'Edit RHK',
             'rhk' => $rhk,
             'skp_id' => $rhk['skp_id'],
-            'skp' => $skp
+            'skp' => $skp,
+            'isRektor' => $isRektor,
+            'intervensiList' => $intervensiList,
+            'selectedIndikatorId' => $selectedIndikatorId,
+            'selectedRhkId' => $selectedRhkId
         ];
         
         return view('rhk/edit', $data);
@@ -124,7 +154,8 @@ class Rhk extends BaseController
         $data = [
             'nama_rhk' => $this->request->getPost('nama_rhk'),
             'klasifikasi' => $this->request->getPost('klasifikasi'),
-            'bobot' => $this->request->getPost('bobot') ?: 0
+            'intervensi_indikator_id' => $this->request->getPost('intervensi_indikator_id') ?: null,
+            'intervensi_dari_manual' => $this->request->getPost('intervensi_dari_manual') ?: null
         ];
         
         $rhkModel->update($id, $data);
@@ -173,12 +204,17 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'Tidak dapat menambah indikator');
         }
         
+        $userModel = new UserModel();
+        $user = $userModel->find($skp['user_id']);
+        $isRektor = ($user && $user['role'] === 'rektor');
+        
         $skp = $skpModel->getSkpWithDetails($rhk['skp_id']);
         
         $data = [
             'title' => 'Tambah Indikator',
             'rhk' => $rhk,
-            'skp' => $skp
+            'skp' => $skp,
+            'isRektor' => $isRektor
         ];
         
         return view('rhk/indikator_create', $data);
@@ -188,17 +224,31 @@ class Rhk extends BaseController
     {
         $indikatorModel = new RhkIndikatorModel();
         
-        $data = [
-            'rhk_id' => $this->request->getPost('rhk_id'),
-            'indikator' => $this->request->getPost('indikator'),
-            'target' => $this->request->getPost('target'),
-            'aspek' => $this->request->getPost('aspek')
-        ];
+        $rhkModel = new RhkModel();
+        $rhk = $rhkModel->find($this->request->getPost('rhk_id'));
+        $skpModel = new SkpModel();
+        $skp = $skpModel->find($rhk['skp_id']);
+        $userModel = new UserModel();
+        $user = $userModel->find($skp['user_id']);
+        $isRektor = ($user && $user['role'] === 'rektor');
+        
+        if ($isRektor) {
+            $data = [
+                'rhk_id' => $this->request->getPost('rhk_id'),
+                'indikator' => $this->request->getPost('indikator_manual'),
+                'target' => $this->request->getPost('indikator_manual'),
+                'aspek' => 'Manual'
+            ];
+        } else {
+            $data = [
+                'rhk_id' => $this->request->getPost('rhk_id'),
+                'indikator' => $this->request->getPost('indikator'),
+                'target' => $this->request->getPost('target'),
+                'aspek' => $this->request->getPost('aspek')
+            ];
+        }
         
         $indikatorModel->insert($data);
-        
-        $rhkModel = new RhkModel();
-        $rhk = $rhkModel->find($data['rhk_id']);
         
         return redirect()->to('/skp/detail/' . $rhk['skp_id'])
                         ->with('success', 'Indikator berhasil ditambahkan');
@@ -223,13 +273,18 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'Tidak dapat mengedit indikator');
         }
         
+        $userModel = new UserModel();
+        $user = $userModel->find($skp['user_id']);
+        $isRektor = ($user && $user['role'] === 'rektor');
+        
         $skpWithDetails = $skpModel->getSkpWithDetails($rhk['skp_id']);
         
         $data = [
             'title' => 'Edit Indikator',
             'indikator' => $indikator,
             'rhk' => $rhk,
-            'skp' => $skpWithDetails
+            'skp' => $skpWithDetails,
+            'isRektor' => $isRektor
         ];
         
         return view('rhk/indikator_edit', $data);
@@ -254,11 +309,23 @@ class Rhk extends BaseController
             return redirect()->back()->with('error', 'Tidak dapat mengedit indikator');
         }
         
-        $data = [
-            'aspek' => $this->request->getPost('aspek'),
-            'indikator' => $this->request->getPost('indikator'),
-            'target' => $this->request->getPost('target'),
-        ];
+        $userModel = new UserModel();
+        $user = $userModel->find($skp['user_id']);
+        $isRektor = ($user && $user['role'] === 'rektor');
+        
+        if ($isRektor) {
+            $data = [
+                'indikator' => $this->request->getPost('indikator_manual'),
+                'target' => $this->request->getPost('indikator_manual'),
+                'aspek' => 'Manual'
+            ];
+        } else {
+            $data = [
+                'aspek' => $this->request->getPost('aspek'),
+                'indikator' => $this->request->getPost('indikator'),
+                'target' => $this->request->getPost('target'),
+            ];
+        }
         
         $indikatorModel->update($id, $data);
         

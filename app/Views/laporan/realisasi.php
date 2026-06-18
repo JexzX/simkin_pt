@@ -45,6 +45,10 @@
                                 </select>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input" type="checkbox" name="bawahan_saya" value="1" id="bawahanCheck" <?= ($filterBawahan ?? false) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="bawahanCheck">Bawahan Saya</label>
+                                </div>
                                 <button type="submit" class="btn btn-primary me-2"><i class="fas fa-filter me-1"></i> Filter</button>
                                 <a href="<?= base_url('/laporan/export/realisasi?periode_id=' . $periodeId) ?>" class="btn btn-success"><i class="fas fa-download me-1"></i> Export CSV</a>
                             </div>
@@ -61,6 +65,7 @@
                                         <th>Bulan</th>
                                         <th class="text-center">Realisasi</th>
                                         <th class="text-center">Status</th>
+                                        <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -84,11 +89,18 @@
                                             ?>
                                             <span class="badge bg-<?= $statusClass ?>"><?= ucfirst(str_replace('_', ' ', $real['status'])) ?></span>
                                         </td>
+                                        <td class="text-center">
+                                            <?php if(!empty($real['skp_id'])): ?>
+                                            <a href="<?= base_url('/skp/detail/' . $real['skp_id']) ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i> Detail</a>
+                                            <?php else: ?>
+                                            -
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if(empty($realisasiList)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">Tidak ada data</td>
+                                        <td colspan="8" class="text-center py-4 text-muted">Tidak ada data</td>
                                     </tr>
                                     <?php endif; ?>
                                 </tbody>

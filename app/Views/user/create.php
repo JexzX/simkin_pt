@@ -60,6 +60,7 @@
                                         <option value="FEBI">FEBI</option>
                                         <option value="FD">FD</option>
                                         <option value="FS">FS</option>
+                                        <option value="Dakwah">Dakwah</option>
                                         <option value="FUAH">FUAH</option>
                                         <option value="FST">FST</option>
                                         <option value="BIRO">BIRO</option>

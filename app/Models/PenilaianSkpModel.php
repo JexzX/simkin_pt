@@ -11,7 +11,7 @@ class PenilaianSkpModel extends Model
     protected $allowedFields = [
         'skp_id', 'nilai_kuantitas', 'nilai_kualitas', 'nilai_waktu',
         'nilai_total', 'predikat', 'catatan_penilai', 'tanggal_penilaian',
-        'penilai_id', 'status_penilaian'
+        'penilai_id', 'status_penilaian', 'rincian_nilai'
     ];
     
     protected $useTimestamps = false;

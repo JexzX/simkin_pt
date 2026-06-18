@@ -36,7 +36,9 @@
                         <div class="text-center py-5">
                             <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
                             <p class="text-muted mb-3">Belum ada SKP</p>
+                            <?php if(!$hasSkpAktif): ?>
                             <a href="<?= base_url('/skp/create') ?>" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Buat SKP Baru</a>
+                            <?php endif; ?>
                         </div>
                         <?php else: ?>
                         <div class="table-responsive">

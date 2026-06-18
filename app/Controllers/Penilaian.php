@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\SkpModel;
 use App\Models\PenilaianSkpModel;
 use App\Models\RhkModel;
+use App\Models\RhkIndikatorModel;
 use App\Models\RealisasiModel;
 use App\Models\NotifikasiModel;
 
@@ -16,15 +17,12 @@ class Penilaian extends BaseController
         $userId = session()->get('id');
         $userRole = session()->get('role');
         
-        // Ambil SKP yang sudah disetujui dan siap dinilai (bawahan)
         $query = $skpModel->select('skp_master.*, users.nama_lengkap as user_name, users.unit_kerja, users.jabatan, periode.tahun, periode.nama_periode')
                           ->join('users', 'users.id = skp_master.user_id')
                           ->join('periode', 'periode.id = skp_master.periode_id')
                           ->where('skp_master.status', 'disetujui');
         
-        if ($userRole === 'rektor') {
-            // Rektor bisa nilai semua
-        } else {
+        if ($userRole !== 'rektor') {
             $query->where('users.atasan_id', $userId);
         }
         
@@ -47,23 +45,44 @@ class Penilaian extends BaseController
             return redirect()->to('/penilaian')->with('error', 'SKP tidak ditemukan');
         }
         
-        // Check if already assessed
         $penilaianModel = new PenilaianSkpModel();
         $existing = $penilaianModel->where('skp_id', $skpId)->first();
         
-        // Get RHK and realisasi data for assessment
         $rhkModel = new RhkModel();
+        $indikatorModel = new RhkIndikatorModel();
         $realisasiModel = new RealisasiModel();
         
         $rhkList = $rhkModel->getBySkp($skpId);
         $progress = $realisasiModel->getProgressBySkp($skpId);
+        
+        // Get indikator with realisasi for each RHK
+        $rhkIndikators = [];
+        foreach ($rhkList as $rhk) {
+            $indikators = $indikatorModel->where('rhk_id', $rhk['id'])->findAll();
+            foreach ($indikators as &$ind) {
+                $realisasi = $realisasiModel->selectSum('realisasi_kuantitas')
+                    ->where('rhk_indikator_id', $ind['id'])
+                    ->where('status', 'disetujui')
+                    ->first();
+                $ind['total_realisasi'] = $realisasi['realisasi_kuantitas'] ?? 0;
+            }
+            $rhkIndikators[$rhk['id']] = $indikators;
+        }
+        
+        // Parse existing rincian_nilai if any
+        $rincianNilai = [];
+        if ($existing && !empty($existing['rincian_nilai'])) {
+            $rincianNilai = json_decode($existing['rincian_nilai'], true) ?: [];
+        }
         
         $data = [
             'title' => 'Penilaian SKP',
             'skp' => $skp,
             'rhkList' => $rhkList,
             'progress' => $progress,
-            'existing' => $existing
+            'rhkIndikators' => $rhkIndikators,
+            'existing' => $existing,
+            'rincianNilai' => $rincianNilai
         ];
         
         return view('penilaian/create', $data);
@@ -72,15 +91,15 @@ class Penilaian extends BaseController
     public function store()
     {
         $skpId = $this->request->getPost('skp_id');
-        $nilaiKuantitas = $this->request->getPost('nilai_kuantitas');
-        $nilaiKualitas = $this->request->getPost('nilai_kualitas');
-        $nilaiWaktu = $this->request->getPost('nilai_waktu');
+        $nilaiIndikator = $this->request->getPost('nilai_indikator') ?: [];
         $catatan = $this->request->getPost('catatan_penilai');
         
-        // Hitung nilai total (bobot: kuantitas 50%, kualitas 30%, waktu 20%)
-        $nilaiTotal = ($nilaiKuantitas * 0.5) + ($nilaiKualitas * 0.3) + ($nilaiWaktu * 0.2);
+        // Compute average of all indikator scores
+        $scores = array_values($nilaiIndikator);
+        $totalScore = !empty($scores) ? array_sum($scores) / count($scores) : 0;
+        $nilaiTotal = round($totalScore, 2);
         
-        // Tentukan predikat
+        // Determine predikat
         if ($nilaiTotal >= 91) {
             $predikat = 'ISTIMEWA';
         } elseif ($nilaiTotal >= 76) {
@@ -98,11 +117,12 @@ class Penilaian extends BaseController
         
         $data = [
             'skp_id' => $skpId,
-            'nilai_kuantitas' => $nilaiKuantitas,
-            'nilai_kualitas' => $nilaiKualitas,
-            'nilai_waktu' => $nilaiWaktu,
+            'nilai_kuantitas' => null,
+            'nilai_kualitas' => null,
+            'nilai_waktu' => null,
             'nilai_total' => $nilaiTotal,
             'predikat' => $predikat,
+            'rincian_nilai' => json_encode($nilaiIndikator),
             'catatan_penilai' => $catatan,
             'tanggal_penilaian' => date('Y-m-d'),
             'penilai_id' => session()->get('id'),
@@ -115,7 +135,6 @@ class Penilaian extends BaseController
             $penilaianModel->insert($data);
         }
         
-        // Update SKP status and nilai
         $skpModel = new SkpModel();
         $skpModel->update($skpId, [
             'status' => 'selesai',
@@ -123,7 +142,6 @@ class Penilaian extends BaseController
             'predikat' => $predikat
         ]);
         
-        // Notifikasi ke pegawai yang dinilai
         $skp = $skpModel->find($skpId);
         $notifikasiModel = new NotifikasiModel();
         $notifikasiModel->addNotifikasi(

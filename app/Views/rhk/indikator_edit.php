@@ -36,6 +36,12 @@
                         <form action="<?= base_url('/rhk/indikator/update/' . $indikator['id']) ?>" method="post">
                             <?= csrf_field() ?>
 
+                            <?php if(isset($isRektor) && $isRektor): ?>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Indikator <span class="text-danger">*</span></label>
+                                <textarea name="indikator_manual" class="form-control" rows="3" required><?= esc($indikator['indikator']) ?></textarea>
+                            </div>
+                            <?php else: ?>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Aspek <span class="text-danger">*</span></label>
                                 <select name="aspek" class="form-select" required>
@@ -55,6 +61,7 @@
                                 <label class="form-label fw-semibold">Target Tahunan <span class="text-danger">*</span></label>
                                 <input type="text" name="target" class="form-control" required value="<?= esc($indikator['target']) ?>">
                             </div>
+                            <?php endif; ?>
 
                             <hr>
                             <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Simpan Perubahan</button>
