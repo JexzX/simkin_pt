@@ -23,7 +23,7 @@ class Auth extends BaseController
         
         $user = $model->where('username', $username)->first();
         
-        if ($user && password_verify($password, $user['password'])) {
+        if ($user && md5($password) === $user['password']) {
             session()->set([
                 'id'           => $user['id'],
                 'username'     => $user['username'],

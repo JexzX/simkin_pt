@@ -50,12 +50,12 @@ class Profile extends BaseController
 
         $user = $model->find($userId);
 
-        if (!password_verify($this->request->getPost('password_lama'), $user['password'])) {
+        if (md5($this->request->getPost('password_lama')) !== $user['password']) {
             return redirect()->back()->with('error', 'Password lama salah.');
         }
 
         $model->update($userId, [
-            'password' => password_hash($this->request->getPost('password_baru'), PASSWORD_DEFAULT)
+            'password' => md5($this->request->getPost('password_baru'))
         ]);
 
         return redirect()->to('/profil')->with('success', 'Password berhasil diubah.');

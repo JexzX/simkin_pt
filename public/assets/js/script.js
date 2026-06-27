@@ -106,28 +106,6 @@ $(document).ready(function() {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
     
-    // Validate bobot total 100%
-    window.validateBobot = function() {
-        var total = 0;
-        $('.bobot-input').each(function() {
-            total += parseInt($(this).val()) || 0;
-        });
-        
-        if (total !== 100) {
-            $('#bobot-warning').show();
-            $('#submit-btn').prop('disabled', true);
-        } else {
-            $('#bobot-warning').hide();
-            $('#submit-btn').prop('disabled', false);
-        }
-        
-        $('#total-bobot').text(total + '%');
-    };
-    
-    // Initialize bobot validation
-    $(document).on('change', '.bobot-input', function() {
-        validateBobot();
-    });
 });
 
 // Base URL configuration

@@ -39,18 +39,9 @@
                                 <label class="form-label fw-semibold">Unit Kerja</label>
                                 <select name="unit_kerja" class="form-select">
                                     <option value="">-- Semua Unit --</option>
-                                    <option value="FTIK" <?= ($unitKerja == 'FTIK') ? 'selected' : '' ?>>FTIK</option>
-                                    <option value="FEBI" <?= ($unitKerja == 'FEBI') ? 'selected' : '' ?>>FEBI</option>
-                                    <option value="FD" <?= ($unitKerja == 'FD') ? 'selected' : '' ?>>FD</option>
-                                    <option value="FS" <?= ($unitKerja == 'FS') ? 'selected' : '' ?>>FS</option>
-                                    <option value="Dakwah" <?= ($unitKerja == 'Dakwah') ? 'selected' : '' ?>>Dakwah</option>
-                                    <option value="FUAH" <?= ($unitKerja == 'FUAH') ? 'selected' : '' ?>>FUAH</option>
-                                    <option value="FST" <?= ($unitKerja == 'FST') ? 'selected' : '' ?>>FST</option>
-                                    <option value="BIRO" <?= ($unitKerja == 'BIRO') ? 'selected' : '' ?>>BIRO</option>
-                                    <option value="LPM" <?= ($unitKerja == 'LPM') ? 'selected' : '' ?>>LPM</option>
-                                    <option value="LP2M" <?= ($unitKerja == 'LP2M') ? 'selected' : '' ?>>LP2M</option>
-                                    <option value="UPT TIPD" <?= ($unitKerja == 'UPT TIPD') ? 'selected' : '' ?>>UPT TIPD</option>
-                                    <option value="UPT Perpus" <?= ($unitKerja == 'UPT Perpus') ? 'selected' : '' ?>>UPT Perpus</option>
+                                    <?php foreach($unitList as $unit): ?>
+                                    <option value="<?= $unit['nama_unit'] ?>" <?= ($unitKerja == $unit['nama_unit']) ? 'selected' : '' ?>><?= $unit['nama_unit'] ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">

@@ -9,8 +9,7 @@ class PenilaianSkpModel extends Model
     protected $table = 'penilaian_skp';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'skp_id', 'nilai_kuantitas', 'nilai_kualitas', 'nilai_waktu',
-        'nilai_total', 'predikat', 'catatan_penilai', 'tanggal_penilaian',
+        'skp_id', 'nilai_total', 'predikat', 'catatan_penilai', 'tanggal_penilaian',
         'penilai_id', 'status_penilaian', 'rincian_nilai'
     ];
     

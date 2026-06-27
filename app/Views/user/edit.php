@@ -55,11 +55,8 @@
                                     <label class="form-label fw-semibold">Unit Kerja <span class="text-danger">*</span></label>
                                     <select name="unit_kerja" class="form-select" required>
                                         <option value="">-- Pilih Unit Kerja --</option>
-                                        <?php
-                                        $units = ['UIN Salatiga','FTIK','FEBI','FD','FS','FUAH','FST','Dakwah','BIRO','LPM','LP2M','UPT TIPD','UPT Perpus'];
-                                        foreach($units as $unit):
-                                        ?>
-                                        <option value="<?= $unit ?>" <?= ($user['unit_kerja']==$unit)?'selected':'' ?>><?= $unit ?></option>
+                                        <?php foreach($units as $unit): ?>
+                                        <option value="<?= $unit['nama_unit'] ?>" <?= ($user['unit_kerja']==$unit['nama_unit'])?'selected':'' ?>><?= $unit['nama_unit'] ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>

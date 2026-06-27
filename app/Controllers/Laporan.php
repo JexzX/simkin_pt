@@ -7,6 +7,7 @@ use App\Models\PeriodeModel;
 use App\Models\UserModel;
 use App\Models\RealisasiModel;
 use App\Models\PenilaianSkpModel;
+use App\Models\MasterUnitModel;
 
 class Laporan extends BaseController
 {
@@ -14,7 +15,9 @@ class Laporan extends BaseController
     {
         $periodeModel = new PeriodeModel();
         $userModel = new UserModel();
+        $unitModel = new MasterUnitModel();
         $periodeList = $periodeModel->findAll();
+        $unitList = $unitModel->findAll();
         
         $periodeId = $this->request->getGet('periode_id');
         $unitKerja = $this->request->getGet('unit_kerja');
@@ -48,6 +51,7 @@ class Laporan extends BaseController
             'title' => 'Laporan SKP',
             'skpList' => $skpList,
             'periodeList' => $periodeList,
+            'unitList' => $unitList,
             'periodeId' => $periodeId,
             'unitKerja' => $unitKerja,
             'filterBawahan' => $filterBawahan

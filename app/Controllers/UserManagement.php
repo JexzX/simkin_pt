@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use App\Models\MasterUnitModel;
 
 class UserManagement extends BaseController
 {
@@ -22,11 +23,14 @@ class UserManagement extends BaseController
     public function create()
     {
         $userModel = new UserModel();
+        $unitModel = new MasterUnitModel();
         $users = $userModel->findAll();
+        $units = $unitModel->findAll();
         
         $data = [
             'title' => 'Tambah User',
-            'users' => $users
+            'users' => $users,
+            'units' => $units
         ];
         
         return view('user/create', $data);
@@ -50,7 +54,7 @@ class UserManagement extends BaseController
         $userModel = new UserModel();
         $userModel->insert([
             'username' => $this->request->getPost('username'),
-            'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            'password' => md5($this->request->getPost('password')),
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'nip' => $this->request->getPost('nip'),
             'email' => $this->request->getPost('email'),
@@ -67,8 +71,10 @@ class UserManagement extends BaseController
     public function edit($id)
     {
         $userModel = new UserModel();
+        $unitModel = new MasterUnitModel();
         $user = $userModel->find($id);
         $users = $userModel->findAll();
+        $units = $unitModel->findAll();
         
         if (!$user) {
             return redirect()->to('/user')->with('error', 'User tidak ditemukan');
@@ -77,7 +83,8 @@ class UserManagement extends BaseController
         $data = [
             'title' => 'Edit User',
             'user' => $user,
-            'users' => $users
+            'users' => $users,
+            'units' => $units
         ];
         
         return view('user/edit', $data);
@@ -107,7 +114,7 @@ class UserManagement extends BaseController
         // Update password if provided
         $newPassword = $this->request->getPost('password');
         if (!empty($newPassword)) {
-            $updateData['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updateData['password'] = md5($newPassword);
         }
         
         $userModel->update($id, $updateData);
@@ -136,9 +143,9 @@ class UserManagement extends BaseController
             return redirect()->to('/user')->with('error', 'User tidak ditemukan');
         }
         
-        $defaultPassword = 'password123';
+        $defaultPassword = '123';
         $userModel->update($id, [
-            'password' => password_hash($defaultPassword, PASSWORD_DEFAULT)
+            'password' => md5($defaultPassword)
         ]);
         
         return redirect()->to('/user')->with('success', 'Password berhasil direset menjadi: ' . $defaultPassword);
